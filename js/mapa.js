@@ -39,6 +39,13 @@ export async function montarMapa(slot, { centro, comercios, seleccionado, onPin,
   return mapa;
 }
 
+// para la vista previa al deslizar hacia el mapa: se muestra el mismo mapa ya cargado
+export function prestarMapa(slot) {
+  if (!caja || !slot) return false;
+  slot.appendChild(caja);
+  return true;
+}
+
 function ponerVos(c) {
   const ic = L.divIcon({ className: '', html: '<div class="pin-vos" aria-label="Vos"></div>', iconSize: [0, 0] });
   if (marcaVos) marcaVos.setLatLng([c.lat, c.lng]);

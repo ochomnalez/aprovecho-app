@@ -147,7 +147,7 @@ function inicio() {
       </div>
       <div id="contenido-inicio">${esqueleto ? esqueletoInicio() : contenidoInicio(todos, cerca, agotan, mejores, txtBanner)}</div>
     </div>
-    <button class="volver-arriba" id="volver-arriba">${icon('sube', 16)} Volver arriba</button>`,
+    <button class="volver-arriba" id="volver-arriba">${icon('arriba', 16)} Volver arriba</button>`,
     montar: el => {
       const sc = el.querySelector('#scroll-inicio'), peg = el.querySelector('#pegajoso'), va = el.querySelector('#volver-arriba');
       const alScroll = () => {
@@ -222,7 +222,7 @@ let consulta = '';
 function buscar() {
   return {
     html: `<header class="barra" style="padding-left:12px;padding-right:12px;gap:8px">
-      <label class="buscador crece" style="box-shadow:0 0 0 1px var(--linea);height:46px">${icon('buscar', 20)}<input id="q" type="search" placeholder="Buscá un local o comida" value="${esc(consulta)}" autocomplete="off" enterkeyhint="search"></label>
+      <label class="buscador crece" style="box-shadow:0 0 0 1px var(--linea);height:46px">${icon('buscar', 20)}<input id="q" type="search" placeholder="Buscá local o comida" aria-label="Buscar un local o comida" value="${esc(consulta)}" autocomplete="off" enterkeyhint="search"></label>
       <button class="link" data-act="atras" style="padding:0 6px">Cancelar</button></header>
     <div class="cuerpo" id="resultados">${resultados()}</div>`,
     montar: el => {
@@ -305,6 +305,8 @@ function local(id) {
 // ---------------------------------------------------------------------------
 // Mapa
 // ---------------------------------------------------------------------------
+// la hoja baja deja ver el encabezado y el comienzo del primer pack por encima de la barra
+const ALTURAS_HOJA = { baja: 'calc(var(--tab-h) + 112px + var(--sb))', media: '46%', alta: 'calc(100% - 120px - var(--st))' };
 function mapa() {
   const lista = packsVisibles();
   const nf = filtrosActivos();
@@ -313,13 +315,13 @@ function mapa() {
     const x = porComercio.get(p.c.id) || { ...p.c, desde: Infinity, n: 0 };
     x.desde = Math.min(x.desde, p.precio); x.n += p.stock; porComercio.set(p.c.id, x);
   }
-  const altura = { baja: '150px', media: '46%', alta: 'calc(100% - 120px - var(--st))' }[alturaHoja];
+  const altura = ALTURAS_HOJA[alturaHoja];
   const filas = lista.length ? lista.map(p => `
     <button class="pack-fila${p.c.id === selMapa ? ' sel' : ''}" data-go="c/pack/${p.id}" data-com="${p.c.id}">
       ${logoLocal(p.c, 56, 16)}
       <div class="col crece">
-        <span class="fuerte trunc">${esc(p.c.nombre)}</span>
-        <span class="chico trunc">Pack ${TAMANOS[p.tam].toLowerCase()} · ${esc(p.cat)}${p.cond.length ? ' · ' + esc(p.cond.join(', ')) : ''}</span>
+        <span class="fuerte trunc2">${esc(p.c.nombre)}</span>
+        <span class="chico trunc2">Pack ${TAMANOS[p.tam].toLowerCase()} · ${esc(p.cat)}${p.cond.length ? ' · ' + esc(p.cond.join(', ')) : ''}</span>
         <span class="mini">${distTxt(p.dist)} · hoy ${retiroTxt(p.c)} · quedan ${p.stock}</span>
       </div>
       <div class="col" style="align-items:flex-end;gap:0"><span class="precio">${plata(p.precio)}</span><span class="tachado">${plata(p.valor)}</span></div>
@@ -332,7 +334,7 @@ function mapa() {
       <div id="slot-mapa" style="position:absolute;inset:0"><div class="mapa-cargando" id="mapa-cargando"><span class="col" style="align-items:center;gap:12px">${spinner()}<span class="chico">Cargando el mapa…</span></span></div></div>
       <div class="mapa-arriba">
         <div class="fila" style="gap:10px">
-          <label class="buscador crece">${icon('buscar', 20)}<input id="buscar" type="search" placeholder="Buscar local o categoría" value="${esc(buscarMapa)}" autocomplete="off" enterkeyhint="search"></label>
+          <label class="buscador crece">${icon('buscar', 20)}<input id="buscar" type="search" placeholder="Buscar en el mapa" aria-label="Buscar local o categoría en el mapa" value="${esc(buscarMapa)}" autocomplete="off" enterkeyhint="search"></label>
           ${demoBtnCliente(true)}
         </div>
         <div class="chips scroll" style="margin:0 -14px;padding:2px 14px 6px">
@@ -384,21 +386,22 @@ function marcarSeleccion(el, id, desplazar) {
 function ponerAltura(el, a) {
   alturaHoja = a;
   const h = el.querySelector('#hoja-mapa'), b = el.querySelector('.boton-centrar');
-  const v = { baja: '150px', media: '46%', alta: 'calc(100% - 120px - var(--st))' }[a];
+  const v = ALTURAS_HOJA[a];
   h.style.height = v; b.style.bottom = `calc(${v} + 14px)`;
 }
 function hojaArrastrable(el) {
   const h = el.querySelector('#hoja-mapa'), asa = el.querySelector('#asa-mapa');
   let y0 = null, h0 = 0;
   const alto = () => el.getBoundingClientRect().height;
+  const baja = () => { const t = document.querySelector('#barra-tabs .tabs'); return t ? el.getBoundingClientRect().bottom - t.getBoundingClientRect().top + 102 : 176; };
   asa.addEventListener('pointerdown', e => { y0 = e.clientY; h0 = h.getBoundingClientRect().height; h.style.transition = 'none'; asa.setPointerCapture(e.pointerId); });
-  asa.addEventListener('pointermove', e => { if (y0 == null) return; h.style.height = Math.max(120, Math.min(alto() - 110, h0 - (e.clientY - y0))) + 'px'; });
+  asa.addEventListener('pointermove', e => { if (y0 == null) return; h.style.height = Math.max(baja() - 30, Math.min(alto() - 110, h0 - (e.clientY - y0))) + 'px'; });
   const fin = e => {
     if (y0 == null) return;
     const dy = e.clientY - y0; y0 = null; h.style.transition = '';
     const hAct = h.getBoundingClientRect().height, A = alto();
     if (Math.abs(dy) < 6) { ponerAltura(el, alturaHoja === 'alta' ? 'media' : 'alta'); return; }
-    const op = [['baja', 150], ['media', A * .46], ['alta', A - 120]];
+    const op = [['baja', baja()], ['media', A * .46], ['alta', A - 120]];
     op.sort((a, b) => Math.abs(a[1] - hAct) - Math.abs(b[1] - hAct));
     ponerAltura(el, op[0][0]);
   };
@@ -473,7 +476,7 @@ function detalle(id) {
         <div class="pila-s"><h3>Qué puede traer</h3><p class="chico" style="font-size:15px">Lo que le sobró hoy a ${esc(c.nombre)} en ${esc(p.cat.toLowerCase())}. Es sorpresa: el contenido exacto lo ves al retirarlo.</p></div>
         <a class="link" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" rel="noopener">${icon('ruta', 18)} Cómo llegar</a>
       </div>
-      <div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(12px + var(--sb));background:linear-gradient(rgba(255,255,255,0),#fff 32%)">
+      <div class="pie-cta">
         <button class="btn bloque${agotado ? ' off' : ''}" data-go="c/pago/${p.id}">${agotado ? 'Agotado' : `Reservar · ${plata(p.precio)}`}</button>
       </div>
     </div>`,
@@ -583,7 +586,7 @@ function reservas() {
       ? (r.calificacion ? `<span class="mini">${'★'.repeat(r.calificacion)}</span>` : '<span class="link">Calificar</span>')
       : r.estado === 'no_retirada' ? '<span class="badge horno">No retirado</span>' : '<span class="badge">Hoy</span>';
     return `<button class="item" data-go="${r.estado === 'retirada' && !r.calificacion ? 'c/calificar/' : 'c/reserva/'}${r.id}">
-      ${logoLocal(c, 44, 12)}<span class="col crece"><span class="fuerte trunc">${esc(c.nombre)}</span><span class="mini">Pack ${TAMANOS[r.tam].toLowerCase()} · ${r.dia === hoy() ? 'hoy' : r.dia.slice(8) + '/' + r.dia.slice(5, 7)} · ${plata(r.precio)}</span></span>${der}</button>`;
+      ${logoLocal(c, 44, 12)}<span class="col crece"><span class="fuerte trunc2">${esc(c.nombre)}</span><span class="mini">Pack ${TAMANOS[r.tam].toLowerCase()} · ${r.dia === hoy() ? 'hoy' : r.dia.slice(8) + '/' + r.dia.slice(5, 7)} · ${plata(r.precio)}</span></span>${der}</button>`;
   };
   const cuerpo = segReservas === 'activas'
     ? (act.length ? act.map(r => {

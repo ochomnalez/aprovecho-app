@@ -66,7 +66,7 @@ let cartaLeida = false;
 function altaCarta() {
   const faltan = S.carta.filter(p => p.precio == null);
   const lista = S.carta.map(p => `<button class="item" data-act="editar-precio" data-id="${p.id}">
-    <span class="col crece"><span class="fuerte trunc">${esc(p.nombre)}</span><span class="mini">${esc(p.cat)} · ${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span>
+    <span class="col crece"><span class="fuerte trunc2">${esc(p.nombre)}</span><span class="mini">${esc(p.cat)} · ${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span>
     ${p.precio == null ? '<span class="badge horno">No pude leer el precio</span>' : `<span class="fuerte">${plata(p.precio)}${p.u === 'kg' ? '/kg' : ''}</span>`}
   </button>`).join('');
   return {
@@ -159,7 +159,7 @@ function hoyPantalla() {
       <div class="seccion"><h3>Tus packs de hoy</h3></div>
       ${activos.length ? `<div class="lista">${activos.map(p => `<button class="item" data-act="opciones-pack" data-id="${p.id}">
         <span class="ic-caja">${icon(p.origen === 'estacion' ? 'balanza' : 'camara', 20)}</span>
-        <span class="col crece"><span class="fuerte trunc">${esc(p.titulo || 'Pan de campo')}</span><span class="mini">${TAMANOS[p.tam]} · ${plata(p.precio)} · ${p.vendidos || 0} de ${p.stockInicial || p.stock + (p.vendidos || 0)} vendidos</span></span>
+        <span class="col crece"><span class="fuerte trunc2">${esc(p.titulo || 'Pan de campo')}</span><span class="mini">${TAMANOS[p.tam]} · ${plata(p.precio)} · ${p.vendidos || 0} de ${p.stockInicial || p.stock + (p.vendidos || 0)} vendidos</span></span>
         ${p.estado === 'agotado' ? '<span class="badge">Agotado</span>' : `<span class="badge gris">Quedan ${p.stock}</span>`}</button>`).join('')}</div>`
         : vacio('camara', 'Todavía no publicaste nada hoy', 'Cuando saques la primera foto, tus packs aparecen acá.')}
     </div>`,
@@ -429,7 +429,7 @@ function estacion() {
       <div class="seccion"><h3>Hoy</h3><span class="mini">${dec(kgV)} kg para vender · ${dec(kgB)} kg a la basura</span></div>
       ${hoyCap.length ? `<div class="lista">${hoyCap.map(c => `<div class="item">
         <span class="ic-caja" style="${c.destino === 'basura' ? 'background:var(--horno-50);color:var(--horno)' : ''}">${icon(c.destino === 'basura' ? 'basura' : 'etiqueta', 20)}</span>
-        <span class="col crece"><span class="fuerte trunc">${esc(c.producto)}</span><span class="mini">${hhmm(new Date(c.t))} · ${dec(c.kg)} kg${c.motivo ? ' · ' + esc(c.motivo) : ''}</span></span>
+        <span class="col crece"><span class="fuerte trunc2">${esc(c.producto)}</span><span class="mini">${hhmm(new Date(c.t))} · ${dec(c.kg)} kg${c.motivo ? ' · ' + esc(c.motivo) : ''}</span></span>
         ${c.destino === 'basura' ? '<span class="badge horno">Basura</span>' : `<span class="badge">${c.packs || 0} pack${c.packs === 1 ? '' : 's'}</span>`}</div>`).join('')}</div>`
         : '<p class="chico">Todavía no se pesó nada hoy.</p>'}
       ${nota('En la estación real estos dos botones están en la pantalla de la balanza: no hace falta tocar el celu.')}
@@ -488,7 +488,7 @@ function retiros() {
     <div class="cuerpo">
       <button class="btn bloque" data-go="b/escanear">${icon('escanear', 22)} Escanear el QR del cliente</button>
       <form class="fila" data-form="codigo" style="gap:8px">
-        <input class="input crece" name="codigo" placeholder="O escribí el código (ej. K7Q2)" maxlength="4" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.14em;font-weight:800">
+        <input class="input crece input-codigo" name="codigo" placeholder="O escribí el código" aria-label="Código de retiro de 4 letras" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
         <button class="btn" style="flex:none;width:96px" type="submit">Validar</button>
       </form>
       <div class="seccion"><h3>Por retirar · ${act.length}</h3></div>
@@ -505,7 +505,7 @@ function escanearPantalla() {
     <div class="cuerpo">
       <div class="visor"><video id="video" muted playsinline></video><div class="marco"></div><div class="ayuda" id="ayuda">Apuntá al QR del cliente</div></div>
       <form class="fila" data-form="codigo" style="gap:8px">
-        <input class="input crece" name="codigo" placeholder="O escribí el código" maxlength="4" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.14em;font-weight:800">
+        <input class="input crece input-codigo" name="codigo" placeholder="O escribí el código" aria-label="Código de retiro de 4 letras" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
         <button class="btn" style="flex:none;width:96px" type="submit">Validar</button>
       </form>
     </div>`,
@@ -884,7 +884,7 @@ export const acciones = {
   'elegir-plan-demo': () => hojaPlanes({ demo: true }),
   'plan-demo': ds => cambiarPlan(ds.v),
   'ver-carta': () => {
-    const h = abrirHoja(`<h2>Tu carta</h2><p class="chico">Tocá un producto para cambiar el precio.</p><div class="lista">${S.carta.map(p => `<button class="item" data-p="${p.id}"><span class="col crece"><span class="fuerte trunc">${esc(p.nombre)}</span><span class="mini">${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span><span class="fuerte">${p.precio == null ? '—' : plata(p.precio)}</span></button>`).join('')}</div>`);
+    const h = abrirHoja(`<h2>Tu carta</h2><p class="chico">Tocá un producto para cambiar el precio.</p><div class="lista">${S.carta.map(p => `<button class="item" data-p="${p.id}"><span class="col crece"><span class="fuerte trunc2">${esc(p.nombre)}</span><span class="mini">${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span><span class="fuerte">${p.precio == null ? '—' : plata(p.precio)}</span></button>`).join('')}</div>`);
     h.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { cerrarHoja(true); editarPrecio(b.dataset.p); } });
   },
   'rep-periodo': ds => { rep.periodo = ds.v; nav.render(); },

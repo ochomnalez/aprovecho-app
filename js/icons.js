@@ -19,6 +19,7 @@ const P = {
   atras: '<path d="M15 5 8 12l7 7"/>',
   adelante: '<path d="m9 5 7 7-7 7"/>',
   abajo: '<path d="m6 9 6 6 6-6"/>',
+  arriba: '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',
   mas: '<path d="M12 5v14M5 12h14"/>',
   menos: '<path d="M5 12h14"/>',
   filtros: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',

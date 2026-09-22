@@ -2,6 +2,7 @@
 import { icon } from './icons.js';
 import { esc } from './util.js';
 import { S, tienePlan } from './store.js';
+import { nav } from './nav.js';
 
 // ---------- barra superior ----------
 export function barra({ titulo = '', atras = true, accion = '', borde = false, centro = false, cerrar = false, grande = false } = {}) {
@@ -10,9 +11,9 @@ export function barra({ titulo = '', atras = true, accion = '', borde = false, c
 }
 
 // ---------- pestañas: barra flotante + botón circular (estilo Rappi) ----------
-const tabBtn = (activa, id, ic, txt, extra = '') => `<button class="tab${activa === id ? ' on' : ''}" data-tab="${id}" aria-label="${txt}"${activa === id ? ' aria-current="page"' : ''}>${icon(ic, 23)}<span>${txt}</span>${extra}</button>`;
+const tabBtn = (activa, id, ic, txt, extra = '', corto = '') => `<button class="tab${activa === id ? ' on' : ''}" data-tab="${id}" aria-label="${txt}"${activa === id ? ' aria-current="page"' : ''}>${icon(ic, 23)}${corto ? `<span class="largo">${txt}</span><span class="corto">${corto}</span>` : `<span>${txt}</span>`}${extra}</button>`;
 export function tabsCliente(activa, reservasActivas = 0) {
-  return `<nav class="tabs con-circulo" aria-label="Secciones">
+  return `<nav class="tabs con-circulo" aria-label="Secciones"><span class="indicador"></span>
     ${tabBtn(activa, 'c/inicio', 'casa', 'Inicio')}
     ${tabBtn(activa, 'c/mapa', 'mapa', 'Mapa')}
     ${tabBtn(activa, 'c/reservas', 'bolsa', 'Reservas', reservasActivas ? `<span class="punto">${reservasActivas}</span>` : '')}
@@ -21,12 +22,16 @@ export function tabsCliente(activa, reservasActivas = 0) {
 }
 export function tabsComercio(activa, porRetirar = 0) {
   const intel = tienePlan('intelligence');
-  return `<nav class="tabs con-circulo" aria-label="Secciones">
+  return `<nav class="tabs con-circulo" aria-label="Secciones"><span class="indicador"></span>
     ${tabBtn(activa, 'b/hoy', 'casa', 'Hoy')}
     ${tabBtn(activa, 'b/retiros', 'qr', 'Retiros', porRetirar ? `<span class="punto">${porRetirar}</span>` : '')}
-    ${intel ? tabBtn(activa, 'b/intel', 'chispa', 'Intelligence') : tabBtn(activa, 'b/impacto', 'grafico', 'Impacto')}
+    ${intel ? tabBtn(activa, 'b/intel', 'chispa', 'Intelligence', '', 'Intel') : tabBtn(activa, 'b/impacto', 'grafico', 'Impacto')}
     ${tabBtn(activa, 'b/cuenta', 'local', 'Cuenta')}
   </nav><button class="circulo-tab verde" data-go="b/camara" aria-label="Publicar con una foto">${icon('camara', 27)}</button>`;
+}
+
+export function ordenPestanas(rol) {
+  return rol === 'comercio' ? ['b/hoy', 'b/retiros', tienePlan('intelligence') ? 'b/intel' : 'b/impacto', 'b/cuenta'] : ['c/inicio', 'c/mapa', 'c/reservas', 'c/perfil'];
 }
 
 // ---------- ruedita de carga, estilo iOS ----------
@@ -123,7 +128,7 @@ export function demoBtnCliente(sobreMapa = false) {
 
 export function demoPill() {
   const n = { basico: 'Básico', smart: 'Smart', intelligence: 'Intelligence' }[S.plan];
-  return `<button class="demo-pill" data-act="elegir-plan-demo" aria-label="Cambiar el plan de la demo">Demo · ${n}${icon('abajo', 16)}</button>`;
+  return `<button class="demo-pill" data-act="elegir-plan-demo" aria-label="Demo, plan ${n}. Cambiar el plan">Demo<span class="demo-plan">&nbsp;· ${n}</span>${icon('abajo', 16)}</button>`;
 }
 
 // ---------- hojas, avisos, confirmaciones (se montan sobre #app) ----------
@@ -141,22 +146,68 @@ export function abrirHoja(html, { alCerrar } = {}) {
   velo.addEventListener('click', () => cerrarHoja());
   app.append(velo, hoja);
   hojaActual = { velo, hoja, alCerrar };
-  // arrastrar hacia abajo para cerrar
-  let y0 = null;
-  hoja.querySelector('.asa').addEventListener('pointerdown', e => { y0 = e.clientY; hoja.setPointerCapture(e.pointerId); });
-  hoja.addEventListener('pointermove', e => { if (y0 != null) { const dy = Math.max(0, e.clientY - y0); hoja.style.transform = `translateY(${dy}px)`; } });
-  hoja.addEventListener('pointerup', e => { if (y0 != null) { const dy = e.clientY - y0; y0 = null; hoja.style.transform = ''; if (dy > 90) cerrarHoja(); } });
+  // terminada la entrada se saca la animación, así el arrastre y el cierre parten de donde está
+  const listo = e => { if (e.target !== hoja) return; hoja.removeEventListener('animationend', listo); if (!hoja.classList.contains('cierra')) hoja.style.animation = 'none'; };
+  hoja.addEventListener('animationend', listo);
+  velo.addEventListener('animationend', () => { velo.style.animation = 'none'; }, { once: true });
+  arrastrarParaCerrar(hoja, velo);
   const primero = hoja.querySelector('button, input, select');
   if (primero && !matchMedia('(pointer:coarse)').matches) primero.focus();
+  nav.hojaAbierta?.();
   return hoja;
+}
+// se cierra tirando para abajo: desde la manija o desde el contenido cuando ya está arriba de todo
+function arrastrarParaCerrar(hoja, velo) {
+  const cont = hoja.querySelector('.contenido');
+  let y0 = null, x0 = 0, dy = 0, t0 = 0, activo = false;
+  const empezar = (x, y, t) => { y0 = y; x0 = x; dy = 0; t0 = t; activo = false; };
+  const mover = (x, y) => {
+    const d = y - y0;
+    if (!activo) {
+      if (d < -4 || Math.abs(x - x0) > Math.abs(d)) { y0 = null; return false; }
+      if (d < 8 || cont.scrollTop > 0) return false;
+      activo = true; hoja.style.animation = 'none'; hoja.style.transition = 'none'; velo.style.animation = 'none'; velo.style.transition = 'none';
+    }
+    dy = Math.max(0, d);
+    hoja.style.transform = `translate3d(0,${dy}px,0)`;
+    velo.style.opacity = String(1 - Math.min(1, dy / hoja.offsetHeight) * .9);
+    return true;
+  };
+  const soltar = t => {
+    if (y0 == null) return;
+    y0 = null;
+    if (!activo) return;
+    activo = false;
+    const v = dy / Math.max(1, t - t0);
+    if (dy > Math.min(130, hoja.offsetHeight * .3) || (v > .5 && dy > 30)) cerrarHoja();
+    else { hoja.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; hoja.style.transform = ''; velo.style.transition = 'opacity .26s'; velo.style.opacity = ''; }
+  };
+  hoja.addEventListener('touchstart', e => {
+    if (e.touches.length > 1 || e.target.closest('input[type=range],textarea,.chips.scroll,.carril')) return;
+    if (cont.contains(e.target) && cont.scrollTop > 0) return;
+    empezar(e.touches[0].clientX, e.touches[0].clientY, e.timeStamp);
+  }, { passive: true });
+  hoja.addEventListener('touchmove', e => { if (y0 != null && mover(e.touches[0].clientX, e.touches[0].clientY)) e.preventDefault(); }, { passive: false });
+  hoja.addEventListener('touchend', e => soltar(e.timeStamp));
+  hoja.addEventListener('touchcancel', e => soltar(e.timeStamp));
+  // con mouse, desde la manija
+  const asa = hoja.querySelector('.asa');
+  asa.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; empezar(e.clientX, e.clientY, e.timeStamp); asa.setPointerCapture(e.pointerId); });
+  asa.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && y0 != null) mover(x0, e.clientY); });
+  asa.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') soltar(e.timeStamp); });
 }
 export function cerrarHoja(inmediato) {
   if (!hojaActual) return;
   const { velo, hoja, alCerrar } = hojaActual;
   hojaActual = null;
   if (inmediato) { velo.remove(); hoja.remove(); }
-  else { hoja.classList.add('cierra'); velo.style.opacity = '0'; velo.style.transition = 'opacity .2s'; setTimeout(() => { velo.remove(); hoja.remove(); }, 240); }
+  else {
+    hoja.style.animation = ''; hoja.style.transition = '';
+    hoja.classList.add('cierra'); velo.style.animation = 'none'; velo.style.transition = 'opacity .2s'; velo.style.opacity = '0';
+    setTimeout(() => { velo.remove(); hoja.remove(); }, 240);
+  }
   alCerrar && alCerrar();
+  nav.hojaCerrada?.();
 }
 export const hojaAbierta = () => !!hojaActual;
 
@@ -164,7 +215,7 @@ let toastT = null;
 export function toast(msg, { ic = 'check', accion = null, sinTabs = false, ms = 3800 } = {}) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div');
-  t.className = 'toast' + (sinTabs || !document.querySelector('.pantalla.actual .tabs, #app > .tabs') ? ' sin-tabs' : '');
+  t.className = 'toast' + (sinTabs || !document.querySelector('#barra-tabs:not(.oculta) .tabs') ? ' sin-tabs' : '');
   t.setAttribute('role', 'status');
   t.innerHTML = `${icon(ic, 20)}<span>${msg}</span>${accion ? `<button data-act="${accion.act}"${accion.id ? ` data-id="${esc(accion.id)}"` : ''}>${esc(accion.txt)}</button>` : ''}`;
   document.getElementById('app').append(t);
