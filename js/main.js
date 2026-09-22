@@ -89,7 +89,7 @@ export function ir(ruta, { replace = false, raiz = false } = {}) {
 function atras() {
   if (hojaAbierta()) { cerrarHoja(); return; }
   if (indice > 0) history.back();
-  else pintar(inicio(), 'pop');
+  else { const r = inicio(); history.replaceState({ ruta: r, i: 0 }, '', '#/' + r); pintar(r, 'pop'); }
 }
 
 const rutaDelHash = () => decodeURIComponent((location.hash || '').replace(/^#\//, ''));
