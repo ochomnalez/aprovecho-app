@@ -54,6 +54,11 @@ export function nota(texto, ic = 'info', tipo = '') {
   return `<div class="nota ${tipo}">${icon(ic, 18)}<span>${texto}</span></div>`;
 }
 
+// botón "Demo" del modo cliente: abre el menú para pasar al modo local, cambiar de zona o reiniciar
+export function demoBtnCliente(sobreMapa = false) {
+  return `<button class="demo-pill${sobreMapa ? ' sobre-mapa' : ''}" data-act="menu-demo-cliente" aria-label="Opciones de la demo">Demo${icon('abajo', 16)}</button>`;
+}
+
 export function demoPill() {
   const n = { basico: 'Básico', smart: 'Smart', intelligence: 'Intelligence' }[S.plan];
   return `<button class="demo-pill" data-act="elegir-plan-demo" aria-label="Cambiar el plan de la demo">Demo · ${n}${icon('abajo', 16)}</button>`;

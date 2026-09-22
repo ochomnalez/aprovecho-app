@@ -3,7 +3,7 @@ import { esc, plata, dec, num, distanciaM, distTxt, gramos, pad, vibrar, esperar
 import { icon, isotipo } from './icons.js';
 import { S, guardar, ahora, hoy, comercio, packsActivos, evento, ubicar, ZONA_NORTE, producto } from './store.js';
 import { CONFIG, CATEGORIAS, CONDICIONES, TAMANOS, nutricion, NIVELES, co2, kmAuto } from './data.js';
-import { barra, tabsCliente, abrirHoja, cerrarHoja, toast, vacio, badgeDato, nota } from './ui.js';
+import { barra, tabsCliente, abrirHoja, cerrarHoja, toast, vacio, badgeDato, nota, demoBtnCliente } from './ui.js';
 import { cajaSorpresa } from './fotos.js';
 import { montarMapa, ponerPines, enfocar } from './mapa.js';
 import { qrSvg, payload } from './qr.js';
@@ -120,7 +120,10 @@ function mapa() {
     html: `<div class="cuerpo sin-pad" style="position:relative;overflow:hidden">
       <div id="slot-mapa" style="position:absolute;inset:0"></div>
       <div class="mapa-arriba">
-        <label class="buscador">${icon('buscar', 20)}<input id="buscar" type="search" placeholder="Buscar local o categoría" value="${esc(buscar)}" autocomplete="off" enterkeyhint="search"></label>
+        <div class="fila" style="gap:10px">
+          <label class="buscador crece">${icon('buscar', 20)}<input id="buscar" type="search" placeholder="Buscar local o categoría" value="${esc(buscar)}" autocomplete="off" enterkeyhint="search"></label>
+          ${demoBtnCliente(true)}
+        </div>
         <div class="chips scroll" style="margin:0 -14px;padding:2px 14px 6px">
           <button class="chip${nf ? ' on' : ''}" data-act="abrir-filtros">${icon('filtros', 18)} Filtros${nf ? ' · ' + nf : ''}</button>
           ${Object.entries(TAMANOS).map(([k, v]) => `<button class="chip${S.filtros.tam.includes(k) ? ' on' : ''}" data-act="filtro-rapido" data-grupo="tam" data-v="${k}">${v}</button>`).join('')}
@@ -381,7 +384,7 @@ function reservas() {
     : (ant.length ? `<div class="lista">${ant.map(fila).join('')}</div>` : vacio('reloj', 'Todavía no hay reservas anteriores', 'Tus packs retirados van a aparecer acá.'));
   return {
     tabs: tabsCliente('c/reservas', act.length), clase: 'con-tabs gris',
-    html: `${barra({ titulo: 'Reservas', atras: false })}
+    html: `${barra({ titulo: 'Reservas', atras: false, accion: demoBtnCliente() })}
     <div class="cuerpo">
       <div class="seg"><button class="${segReservas === 'activas' ? 'on' : ''}" data-act="seg-reservas" data-v="activas">Activas${act.length ? ' · ' + act.length : ''}</button><button class="${segReservas === 'anteriores' ? 'on' : ''}" data-act="seg-reservas" data-v="anteriores">Anteriores</button></div>
       ${cuerpo}
@@ -428,7 +431,7 @@ function perfil() {
   const co = co2(k.kg);
   return {
     tabs: tabsCliente('c/perfil', S.reservas.filter(r => r.estado === 'activa').length), clase: 'con-tabs gris',
-    html: `${barra({ titulo: 'Perfil', atras: false })}
+    html: `${barra({ titulo: 'Perfil', atras: false, accion: demoBtnCliente() })}
     <div class="cuerpo">
       <div class="card">
         <div class="fila"><div class="avatar" style="width:60px;height:60px;border-radius:99px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:24px;color:var(--verde)">${esc((S.perfil.nombre || '?').charAt(0).toUpperCase())}</div>
@@ -448,7 +451,7 @@ function perfil() {
         <button class="item" data-act="editar-nombre"><span class="ic-caja">${icon('usuario', 20)}</span><span class="col crece"><span class="fuerte">Nombre</span><span class="mini">${esc(S.perfil.nombre || 'Sin nombre')}</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-act="forma-nivel"><span class="ic-caja">${icon('etiqueta', 20)}</span><span class="col crece"><span class="fuerte">Cómo se muestra tu nivel</span><span class="mini">${esc(nombreNivel(act))}</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-act="elegir-zona"><span class="ic-caja">${icon('pin', 20)}</span><span class="col crece"><span class="fuerte">Zona</span><span class="mini">${S.ubic?.fuente === 'gps' ? 'Tu ubicación actual' : esc(S.ubic?.barrio || 'Olivos')}</span></span>${icon('adelante', 20, 'chev')}</button>
-        <button class="item" data-act="entrar-comercio"><span class="ic-caja">${icon('local', 20)}</span><span class="col crece"><span class="fuerte">Pasar al modo comercio</span><span class="mini">Para mostrar el otro lado en la demo</span></span>${icon('adelante', 20, 'chev')}</button>
+        <button class="item" data-act="entrar-comercio"><span class="ic-caja">${icon('local', 20)}</span><span class="col crece"><span class="fuerte">Pasar al modo local</span><span class="mini">Ver la app como un comercio</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-act="reiniciar"><span class="ic-caja" style="background:var(--rojo-50);color:var(--rojo)">${icon('refrescar', 20)}</span><span class="col crece"><span class="fuerte">Reiniciar la demo</span><span class="mini">Borra lo que hiciste en este celu</span></span></button>
       </div>
       ${instalarUI(true)}
@@ -480,6 +483,17 @@ export const acciones = {
   'elegir-zona': () => {
     const h = abrirHoja(`<h2>Elegí una zona</h2><div class="lista">${ZONAS.map((z, i) => `<button class="item" data-z="${i}"><span class="ic-caja">${icon('pin', 20)}</span><span class="crece fuerte">${z[0]}</span>${icon('adelante', 20, 'chev')}</button>`).join('')}</div>`);
     h.addEventListener('click', e => { const b = e.target.closest('[data-z]'); if (b) { cerrarHoja(); usarZona(ZONAS[+b.dataset.z]); } });
+  },
+  'menu-demo-cliente': () => {
+    const zona = S.ubic?.fuente === 'gps' ? 'Tu ubicación actual' : (S.ubic?.barrio || 'Olivos');
+    // los botones usan acciones que ya existen: main.js las resuelve y cada una cierra esta hoja al navegar
+    abrirHoja(`<div class="fila entre"><h2>Demo</h2><span class="badge gris">Modo cliente</span></div>
+      <div class="lista">
+        <button class="item" data-act="entrar-comercio"><span class="ic-caja">${icon('local', 20)}</span><span class="col crece"><span class="fuerte">Pasar al modo local</span><span class="mini">Ver la app como un comercio: publicar, estación, Intelligence</span></span>${icon('adelante', 20, 'chev')}</button>
+        <button class="item" data-act="elegir-zona"><span class="ic-caja">${icon('pin', 20)}</span><span class="col crece"><span class="fuerte">Cambiar de zona</span><span class="mini">${esc(zona)}</span></span>${icon('adelante', 20, 'chev')}</button>
+        <button class="item" data-act="reiniciar"><span class="ic-caja" style="background:var(--rojo-50);color:var(--rojo)">${icon('refrescar', 20)}</span><span class="col crece"><span class="fuerte">Reiniciar la demo</span><span class="mini">Borra lo que hiciste en este celu</span></span></button>
+      </div>
+      <p class="mini">Los datos de la demo son simulados y quedan solo en este celu.</p>`);
   },
   'abrir-filtros': () => abrirFiltros(),
   'filtro-rapido': ds => { const a = S.filtros[ds.grupo]; const i = a.indexOf(ds.v); i >= 0 ? a.splice(i, 1) : a.push(ds.v); vibrar(6); guardar(); nav.render(); },

@@ -661,15 +661,19 @@ function cuenta() {
   };
 }
 
-function hojaPlanes() {
-  const h = abrirHoja(`<h2>Planes</h2>
+function hojaPlanes({ demo = false } = {}) {
+  const h = abrirHoja(`${demo ? '<div class="fila entre"><h2>Demo</h2><span class="badge gris">Modo local</span></div><span class="eti">Plan</span>' : '<h2>Planes</h2>'}
     ${Object.entries(PLANES).map(([k, v]) => `<button class="card toque${S.plan === k ? ' sel' : ''}" data-plan="${k}" style="text-align:left">
       <div class="fila entre"><h3 style="font-size:18px">${v.nombre}</h3>${S.plan === k ? '<span class="badge">Tu plan</span>' : ''}</div>
       <p class="chico">${esc(v.lema)}</p>
       <div class="pila-s">${v.incluye.map(x => `<span class="fila mini" style="gap:6px">${icon('check', 15, 'verde')}${esc(x)}</span>`).join('')}</div>
       <span class="fuerte verde">${esc(CONFIG.precios[k].txt)} <span class="mini" style="font-weight:600">${esc(CONFIG.precios[k].sub)}</span></span>
     </button>`).join('')}
-    <p class="mini">Precios de ejemplo. En la demo el cambio es inmediato; en la vida real, Smart e Intelligence incluyen coordinar la instalación de la estación.</p>`);
+    <p class="mini">Precios de ejemplo. En la demo el cambio es inmediato; en la vida real, Smart e Intelligence incluyen coordinar la instalación de la estación.</p>
+    ${demo ? `<div class="lista">
+      <button class="item" data-act="entrar-cliente"><span class="ic-caja">${icon('usuario', 20)}</span><span class="col crece"><span class="fuerte">Pasar al modo cliente</span><span class="mini">Ver tus packs como los ve la gente</span></span>${icon('adelante', 20, 'chev')}</button>
+      <button class="item" data-act="reiniciar"><span class="ic-caja" style="background:var(--rojo-50);color:var(--rojo)">${icon('refrescar', 20)}</span><span class="col crece"><span class="fuerte">Reiniciar la demo</span><span class="mini">Borra lo que hiciste en este celu</span></span></button>
+    </div>` : ''}`);
   h.addEventListener('click', e => { const b = e.target.closest('[data-plan]'); if (b) { cambiarPlan(b.dataset.plan); cerrarHoja(); } });
 }
 export function cambiarPlan(k) {
@@ -870,7 +874,7 @@ export const acciones = {
   'cerrar-hoja': () => cerrarHoja(),
   'periodo-imp': ds => { periodoImp = ds.v; nav.render(); },
   'ver-planes': () => hojaPlanes(),
-  'elegir-plan-demo': () => hojaPlanes(),
+  'elegir-plan-demo': () => hojaPlanes({ demo: true }),
   'plan-demo': ds => cambiarPlan(ds.v),
   'ver-carta': () => {
     const h = abrirHoja(`<h2>Tu carta</h2><p class="chico">Tocá un producto para cambiar el precio.</p><div class="lista">${S.carta.map(p => `<button class="item" data-p="${p.id}"><span class="col crece"><span class="fuerte trunc">${esc(p.nombre)}</span><span class="mini">${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span><span class="fuerte">${p.precio == null ? '—' : plata(p.precio)}</span></button>`).join('')}</div>`);
