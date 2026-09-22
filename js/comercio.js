@@ -3,7 +3,8 @@ import { esc, plata, dec, num, kg, gramos, pct, hhmm, pad, vibrar, esperar, uid,
 import { icon } from './icons.js';
 import { S, guardar, ahora, hoy, comercio, miComercio, producto, evento, tienePlan, ZONA_NORTE, ubicar, reiniciar } from './store.js';
 import { CONFIG, PLANES, CONDICIONES, TAMANOS, RECONOCIMIENTO, armarPacks, agrupar, co2, kmAuto, MOTIVOS_MERMA } from './data.js';
-import { barra, tabsComercio, abrirHoja, cerrarHoja, toast, vacio, badgeDato, nota, demoPill, barras, confirmar } from './ui.js';
+import { barra, tabsComercio, abrirHoja, cerrarHoja, toast, vacio, badgeDato, nota, demoPill, barras, confirmar, cargando, animarNumeros } from './ui.js';
+import { logoLocal } from './ilus.js';
 import { fotoSvg, foto, cajaPct, MUESTRAS, nombreMuestra } from './fotos.js';
 import { filtrar, resumen, porDia, SUCURSALES, sugerencias } from './intel.js';
 import { leerPayload, escanear, detener } from './qr.js';
@@ -133,7 +134,7 @@ function hoyPantalla() {
   const activos = todos.filter(p => p.estado === 'activo' || p.estado === 'agotado');
   return {
     tabs: tabs('b/hoy'), clase: 'con-tabs gris',
-    html: `<header class="barra" style="background:var(--fondo-2)"><div class="titulo" style="font-size:20px">${esc(miComercio().nombre.replace('Panadería ', ''))}<span class="mini" style="display:block;font-family:var(--ui);font-weight:700;letter-spacing:0">Hoy · ${nombrePlan()}${sucLocal()}</span></div>${demoPill()}</header>
+    html: `<header class="barra" style="background:var(--fondo-2);padding-left:18px;padding-right:14px;gap:12px">${logoLocal(miComercio(), 44, 13)}<div class="titulo" style="font-size:20px;font-weight:700;padding:0">${esc(miComercio().nombre.replace('Panadería ', ''))}<span class="mini" style="display:block;font-family:var(--ui);font-weight:550;letter-spacing:-.01em">Hoy${sucLocal() || ' · cierra ' + cierre()}</span></div>${demoPill()}</header>
     <div class="cuerpo">
       ${min > 0 ? `<div class="card aviso fila entre">
           <span class="col"><span class="fuerte">Publicá antes de las ${hhmm(limite())}</span><span class="chico">Cerrás a las ${cierre()}</span></span>
@@ -150,11 +151,11 @@ function hoyPantalla() {
       </button>` : ''}
       ${sugN ? `<button class="card toque verde" data-tab="b/intel" style="text-align:left"><div class="fila entre"><span class="fila" style="gap:8px">${icon('chispa', 22)}<span class="fuerte">${sugN} sugerencias nuevas</span></span>${icon('adelante', 20)}</div><span class="chico">Intelligence encontró patrones en tu desperdicio.</span></button>` : ''}
       <div class="stats">
-        <div class="stat"><span class="n">${publicados}</span><span class="k">Publicados</span></div>
-        <div class="stat"><span class="n">${vendidos}</span><span class="k">Vendidos</span></div>
-        <div class="stat"><span class="n">${porRetirar()}</span><span class="k">A retirar</span></div>
+        <div class="stat"><span class="n" data-contar="${publicados}">${publicados}</span><span class="k">Publicados</span></div>
+        <div class="stat"><span class="n" data-contar="${vendidos}">${vendidos}</span><span class="k">Vendidos</span></div>
+        <div class="stat"><span class="n" data-contar="${porRetirar()}">${porRetirar()}</span><span class="k">A retirar</span></div>
       </div>
-      <div class="card fila entre"><span class="col"><span class="chico">$ recuperados hoy</span><span class="mini">lo cobrado por packs</span></span><span class="kpi"><span class="n md verde">${plata(recuperado)}</span></span></div>
+      <div class="card fila entre"><span class="col"><span class="chico">$ recuperados hoy</span><span class="mini">lo cobrado por packs</span></span><span class="kpi"><span class="n md verde" data-contar="${recuperado}" data-fmt="plata">${plata(recuperado)}</span></span></div>
       <div class="seccion"><h3>Tus packs de hoy</h3></div>
       ${activos.length ? `<div class="lista">${activos.map(p => `<button class="item" data-act="opciones-pack" data-id="${p.id}">
         <span class="ic-caja">${icon(p.origen === 'estacion' ? 'balanza' : 'camara', 20)}</span>
@@ -162,8 +163,10 @@ function hoyPantalla() {
         ${p.estado === 'agotado' ? '<span class="badge">Agotado</span>' : `<span class="badge gris">Quedan ${p.stock}</span>`}</button>`).join('')}</div>`
         : vacio('camara', 'Todavía no publicaste nada hoy', 'Cuando saques la primera foto, tus packs aparecen acá.')}
     </div>`,
+    montar: el => { if (!yaAnimoHoy) { yaAnimoHoy = true; animarNumeros(el, { num: v => num(v), plata: v => plata(v) }); } },
   };
 }
+let yaAnimoHoy = false;
 
 // ---------------------------------------------------------------------------
 // Publicar con foto (B-05 a B-09)
@@ -197,17 +200,18 @@ function analizando() {
   const cajas = f.muestraId ? foto(f.muestraId).cajas : [];
   const unidades = f.unidades ?? (f.kg ? dec(f.kg) + ' kg' : '');
   return {
-    html: `${barra({ titulo: 'Analizando', centro: true })}
-    <div class="cuerpo">
-      <div class="foto escaneo" id="foto-an">${f.muestraId ? fotoSvg(f.muestraId) : `<img src="${f.fotoUrl}" alt="Tu foto">`}</div>
+    clase: 'ia',
+    html: `${barra({ titulo: '', cerrar: true })}
+    <div class="ia-pantalla"></div><div class="ia-pantalla nitido"></div>
+    <div class="cuerpo" style="gap:18px;padding-top:0">
+      <div class="ia-marco"><div class="foto escaneo" id="foto-an">${f.muestraId ? fotoSvg(f.muestraId) : `<img src="${f.fotoUrl}" alt="Tu foto">`}</div></div>
+      <div class="pila-s" style="align-items:center;gap:4px"><h1 class="ia-titulo">La IA está mirando tu foto</h1><span style="color:rgba(255,255,255,.6);font-size:14px">Reconoce el producto, cuenta y arma los packs</span></div>
       <div class="pasos" id="pasos">
         <div class="paso" data-p="0"><i></i>Reconociendo productos</div>
         <div class="paso" data-p="1"><i></i>Contando unidades<span class="crece"></span><span class="fuerte num" id="cuenta"></span></div>
         <div class="paso" data-p="2"><i></i>Cruzando con tu carta</div>
         <div class="paso" data-p="3"><i></i>Armando los packs</div>
       </div>
-      <div style="flex:1"></div>
-      <p class="mini" style="text-align:center">Tarda unos segundos.</p>
     </div>`,
     montar: el => {
       limpiarTimers();
@@ -724,20 +728,23 @@ function reporte() {
 async function descargar(b) {
   if (rep.generando) return;
   rep.generando = true;
-  b.innerHTML = '<span class="spin"></span> Armando el archivo';
-  b.classList.add('off');
+  const car = cargando(rep.formato === 'xlsx' ? 'Armando tu Excel…' : 'Armando tu PDF…');
   try {
     const periodo = rep.periodo === 'fechas' ? { desde: rep.desde < rep.hasta ? rep.desde : rep.hasta, hasta: rep.desde < rep.hasta ? rep.hasta : rep.desde } : rep.periodo;
     const D = datosReporte({ periodo, suc: S.sucursal, secciones: rep.secciones });
     await esperar(150);
     const blob = rep.formato === 'xlsx' ? await armarExcel(D) : await armarPdf(D);
     const nombre = nombreArchivo(rep.formato, typeof periodo === 'object' ? periodo : null);
+    car.listo('Listo');
+    await esperar(450);
+    car.cerrar();
     const r = await entregar(blob, nombre);
     evento('reporte', { formato: rep.formato, periodo: rep.periodo, secciones: rep.secciones.length });
     guardar();
     if (r !== 'cancelado') toast(`Listo: ${nombre}`, { ic: rep.formato === 'xlsx' ? 'excel' : 'pdf', sinTabs: true });
   } catch (e) {
     console.error(e);
+    car.cerrar();
     toast(rep.formato === 'pdf' ? 'No se pudo armar el PDF. Revisá la conexión e intentá de nuevo.' : 'No se pudo armar el archivo. Intentá de nuevo.', { ic: 'alerta', sinTabs: true });
   } finally {
     rep.generando = false;
@@ -759,7 +766,7 @@ export const acciones = {
     nav.go(S.onboarding.hecho ? (tienePlan('intelligence') ? 'b/hoy' : 'b/hoy') : 'b/plan', { raiz: true });
   },
   'plan-alta': ds => { S.plan = ds.v; guardar(); nav.render(); },
-  'leer-carta': async (ds, b) => { b.innerHTML = '<span class="spin"></span> Leyendo tu lista'; b.classList.add('off'); await esperar(1400); cartaLeida = true; nav.render(); },
+  'leer-carta': async () => { const c = cargando('Leyendo tu lista de precios…'); await esperar(1500); c.listo(`Leí ${S.carta.length} productos`); await esperar(650); c.cerrar(); cartaLeida = true; nav.render(); },
   'editar-precio': ds => editarPrecio(ds.id),
   'cond-local': ds => { const i = S.condLocal.indexOf(ds.v); i >= 0 ? S.condLocal.splice(i, 1) : S.condLocal.push(ds.v); guardar(); nav.render(); },
   'terminar-alta': () => {

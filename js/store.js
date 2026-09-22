@@ -2,7 +2,7 @@
 import { isoDia } from './util.js';
 import { CARTA_EJEMPLO, ubicarComercios, packsSemilla, HISTORIAL_CONSUMIDOR, CONFIG } from './data.js';
 
-const CLAVE = 'aprovecho_v2';
+const CLAVE = 'aprovecho_v3'; // la v2 archivada usa otra clave en el mismo dominio
 export const ZONA_NORTE = { lat: -34.5087, lng: -58.4877, fuente: 'default', barrio: 'Olivos' };
 
 // ---------- reloj de la demo ----------

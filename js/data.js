@@ -127,14 +127,14 @@ export const kmAuto = kgCO2 => kgCO2 / CONFIG.kgCO2PorKm;
 
 // ---------- comercios de ejemplo (ficticios), ubicados alrededor tuyo ----------
 export const COMERCIOS_BASE = [
-  { id: 'c1', nombre: 'Panadería La Espiga', cat: 'Panificados', cierre: '21:00', rating: 4.7, resenas: 312, dist: 350, rumbo: 40, color: '#E7C27E', esMio: true },
-  { id: 'c2', nombre: 'Rotisería Don Luis', cat: 'Viandas', cierre: '22:00', rating: 4.5, resenas: 188, dist: 900, rumbo: 120, color: '#D9C39A', estacion: true },
-  { id: 'c3', nombre: 'Café Plaza', cat: 'Pastelería', cierre: '20:30', rating: 4.8, resenas: 97, dist: 600, rumbo: 250, color: '#E9B8A7' },
-  { id: 'c4', nombre: 'Pastelería Lulú', cat: 'Pastelería', cierre: '20:00', rating: 4.6, resenas: 141, dist: 1300, rumbo: 310, color: '#E9B8A7' },
-  { id: 'c5', nombre: 'Almacén Natural Brote', cat: 'Viandas', cierre: '21:30', rating: 4.9, resenas: 76, dist: 1800, rumbo: 190, color: '#C9DDBC' },
-  { id: 'c6', nombre: 'Sandwichería El Buen Pan', cat: 'Sándwiches', cierre: '21:00', rating: 4.4, resenas: 203, dist: 750, rumbo: 80, color: '#EAD8A6' },
-  { id: 'c7', nombre: 'Pizzería Mamma Rosa', cat: 'Viandas', cierre: '23:30', rating: 4.3, resenas: 265, dist: 2200, rumbo: 20, color: '#F0C5A8', estacion: true },
-  { id: 'c8', nombre: 'Panadería Celia Sin TACC', cat: 'Panificados', cierre: '20:30', rating: 4.8, resenas: 59, dist: 1100, rumbo: 160, color: '#E7C27E' },
+  { id: 'c1', corto: 'La Espiga', logo: { bg: '#E3A93B', fg: '#FFFFFF', emblema: 'espiga' }, nombre: 'Panadería La Espiga', cat: 'Panificados', cierre: '21:00', rating: 4.7, resenas: 312, dist: 350, rumbo: 40, color: '#E7C27E', esMio: true },
+  { id: 'c2', corto: 'Don Luis', logo: { bg: '#C4432D', fg: '#FFFFFF', emblema: 'chef' }, nombre: 'Rotisería Don Luis', cat: 'Viandas', cierre: '22:00', rating: 4.5, resenas: 188, dist: 900, rumbo: 120, color: '#D9C39A', estacion: true },
+  { id: 'c3', corto: 'Café Plaza', logo: { bg: '#6B4430', fg: '#F6E7D6', emblema: 'taza' }, nombre: 'Café Plaza', cat: 'Pastelería', cierre: '20:30', rating: 4.8, resenas: 97, dist: 600, rumbo: 250, color: '#E9B8A7' },
+  { id: 'c4', corto: 'Lulú', logo: { bg: '#F2A0B4', fg: '#FFFFFF', emblema: 'cupcake' }, nombre: 'Pastelería Lulú', cat: 'Pastelería', cierre: '20:00', rating: 4.6, resenas: 141, dist: 1300, rumbo: 310, color: '#E9B8A7' },
+  { id: 'c5', corto: 'Brote', logo: { bg: '#3E8E52', fg: '#FFFFFF', emblema: 'hoja' }, nombre: 'Almacén Natural Brote', cat: 'Viandas', cierre: '21:30', rating: 4.9, resenas: 76, dist: 1800, rumbo: 190, color: '#C9DDBC' },
+  { id: 'c6', corto: 'El Buen Pan', logo: { bg: '#F08A24', fg: '#FFFFFF', emblema: 'sandwich' }, nombre: 'Sandwichería El Buen Pan', cat: 'Sándwiches', cierre: '21:00', rating: 4.4, resenas: 203, dist: 750, rumbo: 80, color: '#EAD8A6' },
+  { id: 'c7', corto: 'Mamma Rosa', logo: { bg: '#D6363A', fg: '#FFFFFF', emblema: 'pizza' }, nombre: 'Pizzería Mamma Rosa', cat: 'Viandas', cierre: '23:30', rating: 4.3, resenas: 265, dist: 2200, rumbo: 20, color: '#F0C5A8', estacion: true },
+  { id: 'c8', corto: 'Celia', logo: { bg: '#23907F', fg: '#FFFFFF', emblema: 'sintacc' }, nombre: 'Panadería Celia Sin TACC', cat: 'Panificados', cierre: '20:30', rating: 4.8, resenas: 59, dist: 1100, rumbo: 160, color: '#E7C27E' },
 ];
 
 export function ubicarComercios(centro) {
@@ -175,3 +175,25 @@ export const HISTORIAL_CONSUMIDOR = { packs: 19, kg: 7.8, ahorro: 54000 };
 
 export const MOTIVOS_MERMA = ['Sobró de producción', 'Se venció', 'Recorte de preparación', 'Resto de plato', 'Se quemó o se rompió'];
 export const MOTIVOS_DESCARTE = ['No se puede hacer', 'Ya lo hago', 'No creo que funcione', 'Otro motivo'];
+
+// ---------- Inicio del consumidor ----------
+// categorías grandes (arriba) y chicas (fila deslizable)
+export const CATS_GRANDES = [
+  { id: 'Panificados', titulo: 'Panaderías', ilus: 'medialuna', fondo: '#FBEBD2', tinta: '#7A4A12' },
+  { id: 'Viandas', titulo: 'Viandas', ilus: 'vianda', fondo: '#E3F1DC', tinta: '#23572B' },
+];
+export const CATS_CHICAS = [
+  { id: 'Pastelería', titulo: 'Pastelería', ilus: 'torta', fondo: '#FBE1E6' },
+  { id: 'Sándwiches', titulo: 'Sándwiches', ilus: 'sandwich', fondo: '#FDF1CF' },
+  { id: 'Sin TACC', titulo: 'Sin TACC', ilus: 'sintacc', fondo: '#E0F2EE', cond: true },
+  { id: 'Vegano', titulo: 'Vegano', ilus: 'hoja', fondo: '#E6F4DC', cond: true },
+  { id: 'agotan', titulo: 'Se agotan', ilus: 'fuego', fondo: '#FDE7DC' },
+  { id: 'mejores', titulo: 'Mejor puntuados', ilus: 'estrella', fondo: '#FFF3D6' },
+];
+export const BUSQUEDAS = ['medialunas', 'viandas', 'sin TACC', 'Don Luis', 'pastelería', 'pizza', 'vegano'];
+export const BANNERS = [
+  { id: 'merienda', tono: 'verde', eti: 'Hasta 70% off', titulo: 'Rescatá la merienda', texto: 'Medialunas, facturas y pan de las panaderías de tu barrio.', cta: 'Ver panaderías', ir: 'c/lista/Panificados', ilus: ['medialuna', 'cafe'] },
+  { id: 'sintacc', tono: 'teal', eti: 'Nuevo', titulo: 'Packs sin TACC cerca tuyo', texto: 'Cada local declara qué puede ofrecer, pack por pack.', cta: 'Ver sin TACC', ir: 'c/lista/Sin TACC', ilus: ['sintacc'] },
+  { id: 'compartir', tono: 'naranja', eti: 'Sumá gente', titulo: 'Pasale Aprovecho a un amigo', texto: 'Cuanta más gente rescata, menos comida se tira.', cta: 'Compartir', act: 'compartir-app', ilus: ['caja'] },
+  { id: 'impacto', tono: 'oscuro', eti: 'Tu impacto', titulo: 'Ya rescataste {kg} kg', texto: 'Equivale a {co2} kg de CO₂e que no se emitieron.', cta: 'Ver mi perfil', ir: 'c/perfil', ilus: ['hoja'] },
+];

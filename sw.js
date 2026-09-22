@@ -3,16 +3,16 @@
    - Las calles del mapa que ya viste quedan guardadas (hasta 500 teselas).
    Al cambiar cualquier archivo, subí VERSION: invalida el cache viejo en los celus. */
 
-const VERSION = 'aprovecho-v2.0.3';
-const TESELAS = 'aprovecho-teselas';
-const FUENTES = 'aprovecho-fuentes';
+const VERSION = 'aprovecho-v3-3.0.0';
+const TESELAS = 'aprovecho-v3-teselas';
+const FUENTES = 'aprovecho-v3-fuentes';
 
 const LOCALES = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/nav.js', './js/util.js', './js/icons.js', './js/store.js', './js/data.js',
   './js/fotos.js', './js/intel.js', './js/ui.js', './js/mapa.js', './js/qr.js', './js/export.js',
-  './js/pwa.js', './js/cliente.js', './js/comercio.js', './js/intelui.js',
-  './img/aprovecho-isotipo.svg', './img/aprovecho-logo.svg',
+  './js/pwa.js', './js/cliente.js', './js/comercio.js', './js/intelui.js', './js/ilus.js',
+  './img/aprovecho-isotipo.svg', './img/aprovecho-isotipo-blanco.svg', './img/aprovecho-logo.svg',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/favicon-32.png', './icons/favicon-64.png', './icons/favicon.svg',
 ];
@@ -37,7 +37,10 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const claves = await caches.keys();
-    await Promise.all(claves.filter(k => k !== VERSION && k !== TESELAS && k !== FUENTES).map(k => caches.delete(k)));
+    // borra solo lo suyo: versiones viejas de la v3 y las cachés de la v2 que vivía en esta misma dirección.
+    // No toca 'aprovecho-v2-archivo-*', que es la v2 guardada en su propio link.
+    const propia = k => k.startsWith('aprovecho-v3-') || /^aprovecho-v2\.\d/.test(k) || k === 'aprovecho-teselas' || k === 'aprovecho-fuentes';
+    await Promise.all(claves.filter(k => propia(k) && k !== VERSION && k !== TESELAS && k !== FUENTES).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -55,7 +58,11 @@ self.addEventListener('fetch', e => {
 
   // navegación: la app de la cache, así abre sin señal
   if (req.mode === 'navigate' && url.origin === location.origin) {
-    e.respondWith(fetch(req).then(r => { const copia = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', copia)); return r; })
+    // solo se guarda como index lo que es la raíz de esta app (nunca otra página del mismo dominio)
+    const raiz = new URL('./', self.registration.scope).pathname;
+    const esLaApp = url.pathname === raiz || url.pathname === raiz + 'index.html';
+    if (!esLaApp) return;
+    e.respondWith(fetch(req).then(r => { if (r.ok) { const copia = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', copia)); } return r; })
       .catch(() => caches.match('./index.html', { ignoreSearch: true })));
     return;
   }

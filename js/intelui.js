@@ -19,10 +19,10 @@ const porRetirar = () => S.reservas.filter(r => r.comercioId === 'c1' && r.estad
 
 function encabezado() {
   const subs = [['resumen', 'Resumen'], ['sugerencias', 'Sugerencias'], ['datos', 'Datos'], ['sucursales', 'Sucursales']];
-  return `<header class="barra" style="background:var(--fondo-2)"><div class="titulo" style="font-size:20px">Intelligence</div>
+  return `<header class="barra" style="background:var(--fondo-2);padding-left:18px"><div class="titulo" style="font-size:26px;font-weight:700;letter-spacing:-.035em;padding:0">Intelligence</div>
     <button class="icbtn" data-go="b/reporte" aria-label="Descargar reporte">${icon('bajar', 22)}</button>${demoPill()}</header>
     <div style="padding:0 18px 10px;background:var(--fondo-2);display:flex;flex-direction:column;gap:10px;flex:none">
-      <div class="seg">${subs.map(([k, t]) => `<button class="${sub === k ? 'on' : ''}" data-act="intel-sub" data-v="${k}">${t}</button>`).join('')}</div>
+      <div class="pestanas" role="tablist">${subs.map(([k, t]) => `<button role="tab" aria-selected="${sub === k}" class="${sub === k ? 'on' : ''}" data-act="intel-sub" data-v="${k}">${t}</button>`).join('')}</div>
       ${sub !== 'sucursales' ? `<button class="fila entre" data-act="elegir-sucursal" style="height:40px;padding:0 14px;border-radius:12px;background:var(--fondo);box-shadow:inset 0 0 0 1px var(--linea)">
         <span class="fila" style="gap:8px">${icon(S.sucursal === 'todas' ? 'sucursales' : 'local', 18, 'verde')}<span class="fuerte" style="font-size:14.5px">${esc(nombreSuc())}</span></span>${icon('abajo', 18)}</button>` : ''}
     </div>`;

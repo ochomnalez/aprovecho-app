@@ -7,6 +7,7 @@
 <meta name="description" content="Comida rica que sobró en los locales de tu barrio, a mitad de precio. Nada se pierde, todo vale.">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -16,6 +17,18 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Aprovecho">
+<!-- pantalla de arranque verde de iPhone, una por tamaño de pantalla -->
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="icons/splash-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="icons/splash-750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="icons/splash-1242x2208.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Aprovecho">
 <meta property="og:title" content="Aprovecho · Nada se pierde, todo vale">
@@ -28,15 +41,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+<!-- la tipografía de la marca se usa solo en el logo; todo lo demás usa la del sistema -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap&text=APROVECHO">
+<style>
+  /* la pantalla verde tiene que verse antes que cualquier otra cosa */
+  #splash{position:fixed;inset:0;z-index:9999;background:#2F6B34;display:grid;place-items:center}
+  #splash img{width:128px;height:128px}
+</style>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div id="app">
-  <div class="pantalla" style="display:grid;place-items:center">
-    <img src="img/aprovecho-isotipo.svg" width="120" height="120" alt="Aprovecho">
-  </div>
-</div>
+<div id="splash" aria-hidden="true"><img src="img/aprovecho-isotipo-blanco.svg" alt=""></div>
+<div id="app"></div>
 <noscript><p style="padding:24px;font-family:sans-serif">Aprovecho necesita JavaScript para funcionar.</p></noscript>
 <script type="module" src="js/main.js"></script>
 </body>

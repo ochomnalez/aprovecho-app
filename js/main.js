@@ -2,7 +2,7 @@
 import { cargar, S, hoy, guardar } from './store.js';
 import { nav } from './nav.js';
 import { cerrarHoja, hojaAbierta, toast } from './ui.js';
-import { iniciarPwa, instalar } from './pwa.js';
+import { iniciarPwa, instalar, esStandalone, esIOS } from './pwa.js';
 import { reducirMovimiento } from './util.js';
 import * as cliente from './cliente.js';
 import * as comercio from './comercio.js';
@@ -29,7 +29,7 @@ function resolver(ruta) {
 }
 
 function inicio() {
-  if (S.rol === 'cliente') return S.ubic ? 'c/mapa' : 'c/ubicacion';
+  if (S.rol === 'cliente') return S.ubic ? 'c/inicio' : 'c/ubicacion';
   if (S.rol === 'comercio') return S.onboarding.hecho ? 'b/hoy' : 'b/plan';
   return 'bienvenida';
 }
@@ -94,12 +94,14 @@ function atras() {
 
 const rutaDelHash = () => decodeURIComponent((location.hash || '').replace(/^#\//, ''));
 
+let sinAnimacion = false; // la pantalla ya salió deslizada con el dedo
 window.addEventListener('popstate', e => {
   if (hojaAbierta()) cerrarHoja();
   // un link directo (cambio de #) llega sin estado: se toma la ruta del link
   const st = e.state || { ruta: resolver(rutaDelHash())[0] ? rutaDelHash() : inicio(), i: indice + 1 };
   if (!e.state) history.replaceState(st, '', location.hash);
-  const dir = st.i < indice ? 'pop' : 'push';
+  const dir = sinAnimacion ? 'fade' : st.i < indice ? 'pop' : 'push';
+  sinAnimacion = false;
   indice = st.i;
   pintar(st.ruta, dir);
 });
@@ -127,14 +129,53 @@ app.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && hojaAbierta()) cerrarHoja(); });
 
+// ---------- volver deslizando desde el borde (iPhone con la app instalada, que no trae el gesto) ----------
+let gesto = null;
+if (esIOS() && esStandalone()) {
+  app.addEventListener('touchstart', e => {
+    if (indice === 0 || hojaAbierta() || !actual) return;
+    const t = e.touches[0], r = app.getBoundingClientRect();
+    if (t.clientX - r.left > 22) return;
+    gesto = { x0: t.clientX, y0: t.clientY, dx: 0, activo: false, el: actual.el, w: r.width };
+  }, { passive: true });
+  app.addEventListener('touchmove', e => {
+    if (!gesto) return;
+    const t = e.touches[0], dx = t.clientX - gesto.x0, dy = t.clientY - gesto.y0;
+    if (!gesto.activo) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { gesto = null; return; }
+      if (dx < 8) return;
+      gesto.activo = true; gesto.el.classList.add('arrastrando');
+    }
+    gesto.dx = Math.max(0, dx);
+    gesto.el.style.transform = `translate3d(${gesto.dx}px,0,0)`;
+  }, { passive: true });
+  const soltar = () => {
+    if (!gesto) return;
+    const g = gesto; gesto = null;
+    if (!g.activo) return;
+    const irse = g.dx > g.w * .32;
+    g.el.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)';
+    g.el.style.transform = irse ? `translate3d(${g.w}px,0,0)` : '';
+    setTimeout(() => {
+      g.el.classList.remove('arrastrando'); g.el.style.transition = '';
+      if (irse) { sinAnimacion = true; history.back(); } else g.el.style.transform = '';
+    }, 220);
+  };
+  app.addEventListener('touchend', soltar);
+  app.addEventListener('touchcancel', soltar);
+}
+
 // ---------- arranque ----------
 cargar();
 iniciarPwa(() => { if (['bienvenida', 'c/perfil', 'b/cuenta'].includes(nav.ruta)) nav.render(); });
 const pedida = rutaDelHash();
 const primera = S.rol && pedida && resolver(pedida)[0] ? pedida : inicio();
 history.replaceState({ ruta: primera, i: 0 }, '', '#/' + primera);
-app.querySelectorAll('.pantalla').forEach(p => p.remove()); // el splash de carga del HTML
 pintar(primera, 'fade');
+
+// pantalla de carga verde: se va cuando la app ya se dibujó (y se ve por lo menos un instante)
+const splash = document.getElementById('splash');
+if (splash) setTimeout(() => { splash.classList.add('fuera'); setTimeout(() => splash.remove(), 420); }, Math.max(250, 950 - performance.now()));
 
 // la historia de Intelligence se calcula en segundo plano, así las pantallas abren al instante
 (window.requestIdleCallback || (f => setTimeout(f, 600)))(() => import('./intel.js').then(m => m.historia(new Date())));

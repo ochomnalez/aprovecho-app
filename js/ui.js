@@ -4,30 +4,92 @@ import { esc } from './util.js';
 import { S, tienePlan } from './store.js';
 
 // ---------- barra superior ----------
-export function barra({ titulo = '', atras = true, accion = '', borde = false, centro = false, cerrar = false } = {}) {
+export function barra({ titulo = '', atras = true, accion = '', borde = false, centro = false, cerrar = false, grande = false } = {}) {
   const izq = atras ? `<button class="icbtn" data-act="atras" aria-label="${cerrar ? 'Cerrar' : 'Volver'}">${icon(cerrar ? 'x' : 'atras', 24)}</button>` : '';
-  return `<header class="barra${borde ? ' borde' : ''}">${izq}<div class="titulo${centro ? ' centro' : ''}">${esc(titulo)}</div>${accion || (atras && centro ? '<span style="width:42px"></span>' : '')}</header>`;
+  return `<header class="barra${borde ? ' borde' : ''}${grande ? ' grande' : ''}">${izq}<div class="titulo${centro ? ' centro' : ''}">${esc(titulo)}</div>${accion || (atras && centro ? '<span style="width:42px"></span>' : '')}</header>`;
 }
 
-// ---------- pestañas ----------
+// ---------- pestañas: barra flotante + botón circular (estilo Rappi) ----------
+const tabBtn = (activa, id, ic, txt, extra = '') => `<button class="tab${activa === id ? ' on' : ''}" data-tab="${id}" aria-label="${txt}"${activa === id ? ' aria-current="page"' : ''}>${icon(ic, 23)}<span>${txt}</span>${extra}</button>`;
 export function tabsCliente(activa, reservasActivas = 0) {
-  const t = (id, ic, txt, extra = '') => `<button class="tab${activa === id ? ' on' : ''}" data-tab="${id}">${icon(ic, 24)}<span>${txt}</span>${extra}</button>`;
-  return `<nav class="tabs" aria-label="Secciones">
-    ${t('c/mapa', 'mapa', 'Explorar')}
-    ${t('c/reservas', 'bolsa', 'Reservas', reservasActivas ? `<span class="punto">${reservasActivas}</span>` : '')}
-    ${t('c/perfil', 'usuario', 'Perfil')}
-  </nav>`;
+  return `<nav class="tabs con-circulo" aria-label="Secciones">
+    ${tabBtn(activa, 'c/inicio', 'casa', 'Inicio')}
+    ${tabBtn(activa, 'c/mapa', 'mapa', 'Mapa')}
+    ${tabBtn(activa, 'c/reservas', 'bolsa', 'Reservas', reservasActivas ? `<span class="punto">${reservasActivas}</span>` : '')}
+    ${tabBtn(activa, 'c/perfil', 'usuario', 'Perfil')}
+  </nav><button class="circulo-tab" data-go="c/buscar" aria-label="Buscar">${icon('buscar', 25)}</button>`;
 }
 export function tabsComercio(activa, porRetirar = 0) {
-  const t = (id, ic, txt, extra = '') => `<button class="tab${activa === id ? ' on' : ''}" data-tab="${id}">${icon(ic, 24)}<span>${txt}</span>${extra}</button>`;
   const intel = tienePlan('intelligence');
-  return `<nav class="tabs" aria-label="Secciones">
-    ${t('b/hoy', 'casa', 'Hoy')}
-    ${t('b/retiros', 'qr', 'Retiros', porRetirar ? `<span class="punto">${porRetirar}</span>` : '')}
-    <button class="tab central" data-go="b/camara" aria-label="Publicar con una foto"><span class="bola">${icon('camara', 26)}</span><span>Publicar</span></button>
-    ${intel ? t('b/intel', 'chispa', 'Intelligence') : t('b/impacto', 'grafico', 'Impacto')}
-    ${t('b/cuenta', 'local', 'Cuenta')}
-  </nav>`;
+  return `<nav class="tabs con-circulo" aria-label="Secciones">
+    ${tabBtn(activa, 'b/hoy', 'casa', 'Hoy')}
+    ${tabBtn(activa, 'b/retiros', 'qr', 'Retiros', porRetirar ? `<span class="punto">${porRetirar}</span>` : '')}
+    ${intel ? tabBtn(activa, 'b/intel', 'chispa', 'Intelligence') : tabBtn(activa, 'b/impacto', 'grafico', 'Impacto')}
+    ${tabBtn(activa, 'b/cuenta', 'local', 'Cuenta')}
+  </nav><button class="circulo-tab verde" data-go="b/camara" aria-label="Publicar con una foto">${icon('camara', 27)}</button>`;
+}
+
+// ---------- ruedita de carga, estilo iOS ----------
+export const spinner = (extra = '') => `<span class="spinner ${extra}" role="progressbar" aria-label="Cargando">${'<i></i>'.repeat(12)}</span>`;
+
+// cartel de "cargando" sobre toda la pantalla; devuelve cómo cerrarlo o marcarlo listo
+export function cargando(texto = 'Cargando…') {
+  const el = document.createElement('div');
+  el.className = 'cargando';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="caja">${spinner('grande')}<span>${esc(texto)}</span></div>`;
+  document.getElementById('app').appendChild(el);
+  return {
+    texto: t => { el.querySelector('span').textContent = t; },
+    listo: t => {
+      el.classList.add('listo');
+      el.querySelector('.caja').insertAdjacentHTML('afterbegin', `<span class="tilde">${icon('check', 32)}</span>`);
+      if (t) el.querySelector('span:last-child').textContent = t;
+    },
+    cerrar: () => { el.style.transition = 'opacity .2s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 220); },
+  };
+}
+
+// números que suben de 0 al valor cuando aparecen (data-contar="valor" data-fmt="plata|num|dec|pct")
+export function animarNumeros(root, fmt) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.querySelectorAll('[data-contar]').forEach(el => {
+    const fin = parseFloat(el.dataset.contar), tipo = el.dataset.fmt || 'num';
+    if (!isFinite(fin) || fin === 0) return;
+    const t0 = performance.now(), dur = 700;
+    const paso = t => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt[tipo](fin * e);
+      if (p < 1) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  });
+}
+
+// carrusel: avanza solo cada 4,5 s, se frena mientras el dedo está encima, actualiza los puntos
+export function carrusel(root) {
+  const pista = root.querySelector('.pista'), puntos = [...root.querySelectorAll('.puntos i')];
+  if (!pista || !pista.children.length) return () => {};
+  const n = pista.children.length;
+  let i = 0, pausa = false, auto = false, t = null, tAuto = null, tSoltar = null;
+  const ancho = () => pista.children[0].getBoundingClientRect().width + 12;
+  const marcar = k => puntos.forEach((p, j) => p.classList.toggle('on', j === k));
+  const ir = k => {
+    i = (k + n) % n; marcar(i);
+    auto = true; clearTimeout(tAuto); tAuto = setTimeout(() => { auto = false; }, 900); // el scroll animado no cuenta como gesto
+    pista.scrollTo({ left: i * ancho(), behavior: 'smooth' });
+  };
+  const tic = () => { t = setTimeout(() => { if (!pausa && document.visibilityState === 'visible' && pista.isConnected) ir(i + 1); tic(); }, 4500); };
+  const leer = () => { if (auto) return; const k = Math.round(pista.scrollLeft / ancho()); if (k !== i && k >= 0 && k < n) { i = k; marcar(i); } };
+  pista.addEventListener('scroll', () => { clearTimeout(pista._fin); pista._fin = setTimeout(leer, 90); }, { passive: true });
+  const tocar = () => { pausa = true; auto = false; clearTimeout(tSoltar); };
+  const soltar = () => { clearTimeout(tSoltar); tSoltar = setTimeout(() => { pausa = false; }, 3000); };
+  pista.addEventListener('touchstart', tocar, { passive: true });
+  pista.addEventListener('pointerdown', tocar, { passive: true });
+  pista.addEventListener('touchend', soltar, { passive: true });
+  pista.addEventListener('pointerup', soltar, { passive: true });
+  marcar(0); tic();
+  return () => { clearTimeout(t); clearTimeout(tAuto); clearTimeout(tSoltar); };
 }
 
 // ---------- gráfico de barras ----------
