@@ -658,5 +658,7 @@ select.input{appearance:none;-webkit-appearance:none}
 @keyframes mece{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
 .visor3d.usado .v3-pista{opacity:0;transform:translate(-50%,8px)}
 .visor3d.compacto .v3-pista{bottom:10px;height:30px;font-size:12.5px;padding:0 12px}
-.equipos-card{gap:12px}
-.equipos-card .seg button{font-size:13.5px}
+.eq-info{display:flex;flex-direction:column;gap:14px}
+.eq-puntos{display:flex;justify-content:center;gap:6px;margin-top:-4px}
+.eq-puntos i{width:7px;height:7px;border-radius:4px;background:#D2D8CF;transition:width .3s var(--ease),background .3s}
+.eq-puntos i.on{width:20px;background:var(--tinta)}

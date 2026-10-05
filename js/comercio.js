@@ -51,6 +51,14 @@ const EQUIPOS = {
 };
 let equipoSel = null;
 const equipoVisto = () => equipoSel || equipoDelPlan();
+function verEquipo(cual) {
+  const antes = equipoVisto(), claves = Object.keys(EQUIPOS);
+  if (!EQUIPOS[cual] || cual === antes) return;
+  equipoSel = cual;
+  vibrar(8);
+  nav.render();
+  document.querySelector('.pantalla.actual #eq-info')?.classList.add(claves.indexOf(cual) > claves.indexOf(antes) ? 'anim-tab-der' : 'anim-tab-izq');
+}
 function visorHtml(mod, compacto = false) {
   const e = EQUIPOS[mod], p = posterDe(mod);
   return `<div class="visor3d${compacto ? ' compacto' : ''}${visorUsado() ? ' usado' : ''}" id="visor3d" tabindex="0" role="img" aria-label="Modelo 3D de la ${e.nombre.toLowerCase()}. Arrastrá hacia los costados para girarlo."${p ? ` style="--poster:url(${p})"` : ''}>
@@ -681,17 +689,12 @@ function cuenta() {
         <div class="pila-s">${pl.incluye.map(x => `<span class="fila chico" style="gap:8px">${icon('check', 18, 'verde')}${esc(x)}</span>`).join('')}</div>
         <span class="mini">${esc(CONFIG.precios[S.plan].txt)} · ${esc(CONFIG.precios[S.plan].sub)} · precio de ejemplo</span>
       </div>
-      <div class="card equipos-card">
-        <div class="fila entre"><span class="col"><span class="eti">Equipos de cada plan</span><span class="fuerte">${EQUIPOS[equipoVisto()].nombre}</span></span><span class="plan-tag">Plan ${EQUIPOS[equipoVisto()].plan}</span></div>
-        ${visorHtml(equipoVisto(), true)}
-        ${selectorEquipo(equipoVisto())}
-        <button class="link" data-go="b/equipos" style="align-self:flex-start">Ver en detalle ${icon('adelante', 16)}</button>
-      </div>
       ${sig ? `<div class="card"><span class="fuerte">Pasá a ${PLANES[sig].nombre}</span><span class="chico">${esc(PLANES[sig].lema)}</span><button class="btn chico" data-act="ver-planes" style="align-self:flex-start">Ver qué incluye</button></div>` : ''}
       <div class="lista">
         <button class="item" data-act="ver-carta"><span class="ic-caja">${icon('etiqueta', 20)}</span><span class="col crece"><span class="fuerte">Tu carta</span><span class="mini">${S.carta.length} productos</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-go="b/local"><span class="ic-caja">${icon('local', 20)}</span><span class="col crece"><span class="fuerte">Datos del local</span><span class="mini">Cierre ${cierre()} · descuento ${Math.round(S.descuento * 100)}%</span></span>${icon('adelante', 20, 'chev')}</button>
         ${tienePlan('smart') ? `<button class="item" data-go="b/estacion"><span class="ic-caja">${icon('balanza', 20)}</span><span class="col crece"><span class="fuerte">${EQUIPOS[equipoDelPlan()].nombre}</span><span class="mini">Conectada · calibrada hoy 08:10</span></span>${icon('adelante', 20, 'chev')}</button>` : ''}
+        <button class="item" data-go="b/equipos"><span class="ic-caja">${icon('girar', 20)}</span><span class="col crece"><span class="fuerte">Equipos de cada plan</span><span class="mini">Miralos en 360° y giralos con el dedo</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-go="b/reporte"><span class="ic-caja">${icon('bajar', 20)}</span><span class="col crece"><span class="fuerte">Descargar reporte</span><span class="mini">Excel o PDF</span></span>${icon('adelante', 20, 'chev')}</button>
       </div>
       <span class="eti">Modo demo</span>
@@ -708,7 +711,6 @@ function cuenta() {
       </div>
       ${instalarUI(true)}
     </div>`,
-    montar: el => { montarVisor(el.querySelector('#visor3d'), equipoVisto()); },
   };
 }
 
@@ -804,24 +806,49 @@ async function descargar(b) {
 // Equipos de cada plan, con visor 360°
 // ---------------------------------------------------------------------------
 function equipos() {
-  const mod = equipoVisto(), e = EQUIPOS[mod];
+  const mod = equipoVisto(), e = EQUIPOS[mod], claves = Object.keys(EQUIPOS);
   return {
     clase: 'gris',
     html: `${barra({ titulo: 'Equipos' })}
-    <div class="cuerpo">
+    <div class="cuerpo" id="sc-equipos">
       ${visorHtml(mod)}
       ${selectorEquipo(mod)}
-      <div class="col" style="gap:8px">
-        <div class="fila entre" style="align-items:flex-start"><h1 class="gran-titulo" style="font-size:26px">${e.nombre}</h1><span class="plan-tag" style="margin-top:6px;flex:none">Plan ${e.plan}</span></div>
-        <p class="chico" style="font-size:15px;line-height:1.45">${e.lema}</p>
+      <div class="eq-puntos" aria-hidden="true">${claves.map(k => `<i class="${k === mod ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="eq-info" id="eq-info">
+        <div class="col" style="gap:8px">
+          <div class="fila entre" style="align-items:flex-start"><h1 class="gran-titulo" style="font-size:26px">${e.nombre}</h1><span class="plan-tag" style="margin-top:6px;flex:none">Plan ${e.plan}</span></div>
+          <p class="chico" style="font-size:15px;line-height:1.45">${e.lema}</p>
+        </div>
+        <ul class="det-datos" style="background:var(--fondo)">
+          ${e.datos.map(([ic, t, s]) => `<li><span class="dd-ic">${icon(ic, 20)}</span><span class="col crece"><b>${t}</b><span>${s}</span></span></li>`).join('')}
+        </ul>
+        ${nota('Los modelos 3D son ilustrativos: muestran cómo es cada tipo de equipo, no un producto ya elegido.', 'info')}
+        <div class="card plana fila">${icon('camara', 22)}<span class="col"><span class="fuerte">El plan Básico no lleva equipo</span><span class="chico">Alcanza con el celular del local: sacás una foto y la app arma los packs.</span></span></div>
       </div>
-      <ul class="det-datos" style="background:var(--fondo)">
-        ${e.datos.map(([ic, t, s]) => `<li><span class="dd-ic">${icon(ic, 20)}</span><span class="col crece"><b>${t}</b><span>${s}</span></span></li>`).join('')}
-      </ul>
-      ${nota('Los modelos 3D son ilustrativos: muestran cómo es cada tipo de equipo, no un producto ya elegido.', 'info')}
-      <div class="card plana fila">${icon('camara', 22)}<span class="col"><span class="fuerte">El plan Básico no lleva equipo</span><span class="chico">Alcanza con el celular del local: sacás una foto y la app arma los packs.</span></span></div>
     </div>`,
-    montar: el => { montarVisor(el.querySelector('#visor3d'), mod); },
+    montar: el => {
+      montarVisor(el.querySelector('#visor3d'), mod);
+      // Deslizar de costado sobre la ficha pasa al otro equipo. Sobre el modelo 3D no: ahí el gesto lo gira.
+      // Tampoco arranca pegado a los bordes, para no pisar el gesto de "volver" del teléfono.
+      const sc = el.querySelector('#sc-equipos');
+      let g = null;
+      sc.addEventListener('touchstart', ev => {
+        g = null;
+        if (ev.touches.length > 1 || ev.target.closest('.visor3d,.seg,a,input')) return;
+        const t = ev.touches[0], ancho = sc.clientWidth, x = t.clientX - sc.getBoundingClientRect().left;
+        if (x < 28 || x > ancho - 28) return;
+        g = { x: t.clientX, y: t.clientY };
+      }, { passive: true });
+      sc.addEventListener('touchmove', ev => {
+        if (!g) return;
+        const t = ev.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+        if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { g = null; return; }   // es un scroll para abajo
+        if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+        const i = claves.indexOf(mod) + (dx < 0 ? 1 : -1);
+        g = null;
+        if (claves[i]) verEquipo(claves[i]);
+      }, { passive: true });
+    },
   };
 }
 
@@ -956,7 +983,7 @@ export const acciones = {
   'ver-planes': () => hojaPlanes(),
   'elegir-plan-demo': () => hojaPlanes({ demo: true }),
   'plan-demo': ds => cambiarPlan(ds.v),
-  equipo: ds => { if (equipoSel === ds.v) return; equipoSel = ds.v; vibrar(8); nav.render(); },
+  equipo: ds => verEquipo(ds.v),
   'ver-carta': () => {
     const h = abrirHoja(`<h2>Tu carta</h2><p class="chico">Tocá un producto para cambiar el precio.</p><div class="lista">${S.carta.map(p => `<button class="item" data-p="${p.id}"><span class="col crece"><span class="fuerte trunc2">${esc(p.nombre)}</span><span class="mini">${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span><span class="fuerte">${p.precio == null ? '—' : plata(p.precio)}</span></button>`).join('')}</div>`);
     h.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { cerrarHoja(true); editarPrecio(b.dataset.p); } });

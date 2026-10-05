@@ -68,7 +68,7 @@ function actualizarBarra(html) {
   moverIndicador(!estabaOculta);
 }
 function medir(tab) { return tab ? { x: tab.offsetLeft, w: tab.offsetWidth } : null; }
-function ponerIndicador(ind, p) { ind.style.width = p.w + 'px'; ind.style.transform = `translate3d(${p.x - 6}px,0,0)`; indVisto = p; }
+function ponerIndicador(ind, p) { ind.style.width = p.w + 'px'; ind.style.transform = `translate3d(${p.x - ind.offsetLeft}px,0,0)`; indVisto = p; }
 function moverIndicador(animar) {
   const ind = barraTabs.querySelector('.indicador');
   if (!ind) return;
