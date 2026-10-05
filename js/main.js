@@ -253,7 +253,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && hojaAbiert
 
 // ---------- deslizar de costado para cambiar de sección (cliente y local) ----------
 // No arranca sobre lo que ya se mueve de costado: filas, carrusel, pestañas, mapa, controles.
-const NO_DESLIZAR = '.seg,#slot-mapa,.mapa-caja,.leaflet-container,input,textarea,select,.asa-zona,.rango,.visor,.switch,.stepper,#barra-tabs';
+const NO_DESLIZAR = '.seg,#slot-mapa,.mapa-caja,.leaflet-container,input,textarea,select,.asa-zona,.rango,.visor,.visor3d,.switch,.stepper,#barra-tabs';
 const FILAS = '.carril,.pista,.chips.scroll,.pestanas';
 function tocaFila(el) {
   const f = el.closest(FILAS);

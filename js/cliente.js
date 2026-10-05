@@ -65,10 +65,9 @@ export function tarjetaPack(p, ancha = false) {
       <span class="tp-logo">${logoLocal(c, 44, 13)}</span>
     </div>
     <div class="tp-cuerpo">
-      <b class="trunc">${esc(c.nombre)}</b>
-      <span class="tp-meta"><span class="estrella-mini">★</span> ${rating(c)} · ${distTxt(p.dist)} · ${retiroCorto(c)}</span>
+      <div class="tp-cab"><b class="trunc">${esc(c.nombre)}</b><span class="tp-rating"><span class="estrella-mini">★</span>${rating(c)}</span></div>
       <span class="tp-meta">Pack ${TAMANOS[p.tam].toLowerCase()} · ${esc(p.cat)}${p.cond.length ? ' · ' + esc(p.cond.join(', ')) : ''}</span>
-      <div class="tp-precio"><strong>${plata(p.precio)}</strong><span class="tachado">${plata(p.valor)}</span></div>
+      <div class="tp-pie"><span class="tp-precio"><strong>${plata(p.precio)}</strong><span class="tachado">${plata(p.valor)}</span></span><span class="tp-retiro">${icon('reloj', 13)}${retiroCorto(c)} · ${distTxt(p.dist)}</span></div>
     </div>
   </button>`;
 }
@@ -447,39 +446,59 @@ function detalle(id) {
   const n = nutriPack(p);
   const r = x => num(x[0]) + '–' + num(x[1]);
   const agotado = p.stock <= 0 || p.estado !== 'activo';
+  const off = Math.round((1 - p.precio / p.valor) * 100);
+  const dato = (ic, titulo, texto, extra = '') => `<li><span class="dd-ic">${icon(ic, 20)}</span><span class="col crece"><b>${titulo}</b><span>${texto}</span></span>${extra}</li>`;
   return {
-    html: `<div class="cuerpo sin-pad">
-      <div class="hero-local" style="background:${fondoCategoria[p.cat] || '#F1F6EE'}">
-        ${ilus(ilusPack(p), 170)}
+    clase: 'detalle',
+    html: `<div class="det-barra" id="det-barra">
         <button class="icbtn sobre" data-act="atras" aria-label="Volver">${icon('atras', 24)}</button>
-        <span class="badge oferta" style="position:absolute;right:16px;top:calc(18px + var(--st));height:28px;font-size:13.5px">${Math.round((1 - p.precio / p.valor) * 100)}% off</span>
-        <button class="hero-logo" data-go="c/local/${c.id}" aria-label="Ver ${esc(c.nombre)}">${logoLocal(c, 64, 18)}</button>
+        <b class="trunc">${esc(c.nombre)}</b>
+        <button class="icbtn sobre" data-act="compartir-pack" data-id="${p.id}" aria-label="Compartir">${icon('compartir', 21)}</button>
       </div>
-      <div class="pila" style="padding:36px 18px calc(110px + var(--sb));gap:16px">
-        <button class="col" data-go="c/local/${c.id}" style="text-align:left;gap:3px"><span class="fuerte fila" style="font-size:15px;gap:2px">${esc(c.nombre)} ${icon('adelante', 15)}</span><span class="mini"><span class="estrella-mini">★</span> ${rating(c)} · ${c.resenas} reseñas · ${distTxt(p.dist)}</span></button>
-        <div class="pila-s">
-          <h1 class="gran-titulo" style="font-size:26px">Pack sorpresa · ${esc(p.cat)}</h1>
-          <div class="fila" style="gap:10px"><span class="kpi"><span class="n verde" style="font-size:30px">${plata(p.precio)}</span></span><span class="tachado" style="font-size:15px">${plata(p.valor)}</span></div>
-        </div>
-        <div class="chips">
-          <span class="chip">${icon('caja', 16)} ${TAMANOS[p.tam]}</span>
-          <span class="chip">≈ ${gramos(p.pesoG)}</span>
-          ${p.cond.map(x => `<span class="chip suave on">${esc(x)} · lo declara el local</span>`).join('')}
-        </div>
-        <div class="card plana" style="gap:8px">
-          <div class="fila entre"><span class="fila" style="gap:8px">${icon('reloj', 20, 'verde')}<span class="fuerte">Retiro hoy ${retiroTxt(c)}</span></span></div>
-          <div class="fila entre"><span class="chico">${p.stock === 1 ? 'Queda 1' : `Quedan ${p.stock}`}</span>${badgeDato(p.medido)}</div>
-        </div>
-        ${n ? `<div class="pila-s"><h3>Nutrición estimada del pack</h3>
-          <div class="nutri"><div><b>${r(n[0])}</b><span>kcal</span></div><div><b>${r(n[1])} g</b><span>Proteínas</span></div><div><b>${r(n[2])} g</b><span>Carbohidratos</span></div><div><b>${r(n[3])} g</b><span>Grasas</span></div></div>
-          ${nota('Es una estimación hecha por IA a partir del peso. No sirve para decidir por alergias o intolerancias: consultá al local.', 'info')}</div>` : ''}
-        <div class="pila-s"><h3>Qué puede traer</h3><p class="chico" style="font-size:15px">Lo que le sobró hoy a ${esc(c.nombre)} en ${esc(p.cat.toLowerCase())}. Es sorpresa: el contenido exacto lo ves al retirarlo.</p></div>
-        <a class="link" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" rel="noopener">${icon('ruta', 18)} Cómo llegar</a>
+      <div class="cuerpo sin-pad" id="sc-det">
+      <div class="det-hero" style="background:${fondoCategoria[p.cat] || '#F1F6EE'}">
+        <span class="det-halo"></span>
+        ${ilus(ilusPack(p), 184)}
+        <span class="badge oferta det-off">${off}% off</span>
       </div>
-      <div class="pie-cta">
-        <button class="btn bloque${agotado ? ' off' : ''}" data-go="c/pago/${p.id}">${agotado ? 'Agotado' : `Reservar · ${plata(p.precio)}`}</button>
+      <div class="det-hoja">
+        <button class="det-local" data-go="c/local/${c.id}" aria-label="Ver ${esc(c.nombre)}">
+          ${logoLocal(c, 46, 14)}
+          <span class="col crece"><b class="trunc">${esc(c.nombre)}</b><span class="mini"><span class="estrella-mini">★</span> ${rating(c)} · ${c.resenas} reseñas · ${distTxt(p.dist)}</span></span>
+          ${icon('adelante', 18)}
+        </button>
+        <div class="det-titulo">
+          <h1>Pack sorpresa de ${esc(p.cat.toLowerCase())}</h1>
+          <div class="det-precio"><strong>${plata(p.precio)}</strong><s>${plata(p.valor)}</s><span class="ahorro">Ahorrás ${plata(p.valor - p.precio)}</span></div>
+        </div>
+        <ul class="det-datos">
+          ${dato('reloj', 'Retirás hoy', retiroTxt(c) + ' h', agotado ? '<span class="badge gris">Agotado</span>' : `<span class="badge${p.stock <= 2 ? ' horno' : ''}">${p.stock === 1 ? 'Queda 1' : `Quedan ${p.stock}`}</span>`)}
+          ${dato('caja', 'Tamaño ' + TAMANOS[p.tam].toLowerCase(), '≈ ' + gramos(p.pesoG) + (p.medido ? ' · pesado con balanza' : ' · estimado por foto'))}
+          ${p.cond.length ? dato('hoja', esc(p.cond.join(' · ')), 'Lo declara el local') : ''}
+          ${dato('pin', distTxt(p.dist) + ' de vos', 'Retiro en el local · ' + esc(zonaTxt()), `<a class="btn chico sec" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" rel="noopener">${icon('ruta', 16)} Ir</a>`)}
+        </ul>
+        <section class="det-seccion">
+          <h3>Qué puede traer</h3>
+          <p>Lo que le sobró hoy a ${esc(c.nombre)} en ${esc(p.cat.toLowerCase())}. Es sorpresa: el contenido exacto lo ves al retirarlo.</p>
+        </section>
+        ${n ? `<section class="det-seccion">
+          <h3>Nutrición estimada <span class="mini">todo el pack</span></h3>
+          <div class="nutri-tira"><div><b>${r(n[0])}</b><span>kcal</span></div><div><b>${r(n[1])}</b><span>g proteínas</span></div><div><b>${r(n[2])}</b><span>g carbos</span></div><div><b>${r(n[3])}</b><span>g grasas</span></div></div>
+          <p class="mini">Estimación hecha por IA a partir del peso. No sirve para decidir por alergias o intolerancias: consultá al local.</p>
+        </section>` : ''}
       </div>
+    </div>
+    <div class="det-cta">
+      <span class="col"><span class="mini">Total</span><strong>${plata(p.precio)}</strong></span>
+      <button class="btn crece${agotado ? ' off' : ''}" data-go="c/pago/${p.id}">${agotado ? 'Agotado' : 'Reservar'}</button>
     </div>`,
+    montar: el => {
+      // la barra de arriba queda fija: transparente sobre la foto, sólida al bajar
+      const sc = el.querySelector('#sc-det'), barra = el.querySelector('#det-barra');
+      const mirar = () => barra.classList.toggle('solida', sc.scrollTop > 150);
+      sc.addEventListener('scroll', mirar, { passive: true });
+      mirar();
+    },
   };
 }
 
@@ -718,6 +737,16 @@ export const acciones = {
       if (navigator.share) { await navigator.share(datos); return; }
       await navigator.clipboard.writeText(datos.url);
       toast('Link copiado. Pegalo donde quieras.', { ic: 'compartir' });
+    } catch (e) { /* cancelado */ }
+  },
+  'compartir-pack': async ds => {
+    const p0 = S.packs.find(x => x.id === ds.id); if (!p0) return;
+    const p = conDatos(p0);
+    const datos = { title: 'Aprovecho', text: `Pack sorpresa de ${p.c.nombre} a ${plata(p.precio)} (antes ${plata(p.valor)}).`, url: 'https://ochomnalez.github.io/aprovecho-app/' };
+    try {
+      if (navigator.share) { await navigator.share(datos); return; }
+      await navigator.clipboard.writeText(datos.text + ' ' + datos.url);
+      toast('Copiado. Pegalo donde quieras.', { ic: 'compartir' });
     } catch (e) { /* cancelado */ }
   },
   'usar-busqueda': ds => { consulta = ds.v; nav.render(); },

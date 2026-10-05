@@ -14,7 +14,7 @@ export const CONFIG = {
   umbralAlta: 0.85, umbralDuda: 0.60,
   precios: {                      // PRECIOS DE EJEMPLO
     basico: { txt: 'Sin abono', sub: '+ comisión por pack vendido' },
-    smart: { txt: 'USD 450/mes', sub: '+ comisión · incluye la estación' },
+    smart: { txt: 'USD 450/mes', sub: '+ comisión · incluye la balanza' },
     intelligence: { txt: 'USD 900/mes', sub: 'por sucursal + comisión' },
   },
 };
@@ -23,9 +23,9 @@ export const PLANES = {
   basico: { nombre: 'Básico', lema: 'Mostranos lo que te sobró. Aprovecho hace el resto.',
     incluye: ['Publicás con una foto: la IA arma los packs', 'Impacto en plata, kg y CO₂', 'Reportes en Excel y PDF'] },
   smart: { nombre: 'Smart', lema: 'Medí con precisión lo que desperdiciás y recuperá más.',
-    incluye: ['Todo lo de Básico', 'Estación con balanza y cámara en tu cocina', 'Publicación automática y dato medido', 'Registro de lo que se tira, con motivo'] },
+    incluye: ['Todo lo de Básico', 'Balanza conectada en tu cocina', 'Publicación automática y dato medido por peso', 'Registro de lo que se tira, con motivo'] },
   intelligence: { nombre: 'Intelligence', lema: 'Entendé por qué desperdiciás y empezá a desperdiciar menos.',
-    incluye: ['Todo lo de Smart', 'Conexión con tu sistema de ventas', 'Sugerencias de producción, ventas y finanzas', 'Estadísticas y comparación de sucursales'] },
+    incluye: ['Todo lo de Smart', 'Estación automática de cámara y balanza, según tu volumen', 'Conexión con tu sistema de ventas', 'Sugerencias de producción, ventas y finanzas', 'Estadísticas y comparación de sucursales'] },
 };
 
 export const CATEGORIAS = ['Panificados', 'Pastelería', 'Sándwiches', 'Viandas'];

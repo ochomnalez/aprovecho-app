@@ -12,6 +12,8 @@ import { datosReporte, armarExcel, armarPdf, entregar, nombreArchivo, seccionesD
 import { nav } from './nav.js';
 import { sumarAlPerfil, retiroTxt } from './cliente.js';
 import { instalarUI } from './pwa.js';
+import { montarVisor, posterDe, visorUsado } from './visor3d.js';
+import { spinner } from './ui.js';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -24,6 +26,42 @@ function limite() {
 }
 const minutosAlLimite = () => Math.round((limite() - ahora()) / 60000);
 const puedePublicar = () => minutosAlLimite() > 0;
+// Qué equipo lleva cada plan (entregable final, sección 11): Smart, la balanza conectada;
+// Intelligence suma la estación automática de cámara y balanza según el volumen.
+const equipoDelPlan = () => (tienePlan('intelligence') ? 'estacion' : 'balanza');
+const EQUIPOS = {
+  balanza: {
+    nombre: 'Balanza conectada', plan: 'Smart', icono: 'balanza',
+    lema: 'Pesa lo que sobró y le manda el dato a la app. El peso deja de ser una estimación.',
+    datos: [
+      ['balanza', 'Mide por peso', 'El dato sale de la balanza, no de una foto'],
+      ['enchufe', 'Conectada a la app', 'El peso llega solo, sin tipearlo'],
+      ['etiqueta', 'Viene con el plan Smart', 'Se instala con el alta'],
+    ],
+  },
+  estacion: {
+    nombre: 'Estación automática', plan: 'Intelligence', icono: 'camara',
+    lema: 'Cámara y balanza en un solo equipo: registra la imagen y el peso sin que nadie cargue nada.',
+    datos: [
+      ['camara', 'Captura automática', 'Fotografía y pesa lo que se apoya'],
+      ['grafico', 'Para cocinas de mucho volumen', 'Se suma según el volumen de cada local'],
+      ['sucursales', 'Equipo de un proveedor especializado', 'Todavía no hay un proveedor elegido'],
+    ],
+  },
+};
+let equipoSel = null;
+const equipoVisto = () => equipoSel || equipoDelPlan();
+function visorHtml(mod, compacto = false) {
+  const e = EQUIPOS[mod], p = posterDe(mod);
+  return `<div class="visor3d${compacto ? ' compacto' : ''}${visorUsado() ? ' usado' : ''}" id="visor3d" tabindex="0" role="img" aria-label="Modelo 3D de la ${e.nombre.toLowerCase()}. Arrastrá hacia los costados para girarlo."${p ? ` style="--poster:url(${p})"` : ''}>
+    <span class="v3-carga">${spinner()}</span>
+    <span class="v3-fallo">${icon('alerta', 22)}<span>No se pudo cargar el modelo 3D. Revisá la conexión y volvé a entrar.</span></span>
+    <span class="v3-360">${icon('girar', 14)} 360°</span>
+    <span class="v3-pista">${icon('girar', 16)} Arrastrá para girar</span>
+  </div>`;
+}
+const selectorEquipo = mod => `<div class="seg" role="tablist" aria-label="Equipo">${Object.entries(EQUIPOS).map(([k, e]) => `<button class="${mod === k ? 'on' : ''}" role="tab" aria-selected="${mod === k}" data-act="equipo" data-v="${k}">${e.nombre}</button>`).join('')}</div>`;
+
 const misPacksHoy = () => S.packs.filter(p => p.comercioId === 'c1' && p.dia === hoy() && !String(p.id).startsWith('ps'));
 const semillaMia = () => S.packs.filter(p => p.comercioId === 'c1' && p.dia === hoy() && String(p.id).startsWith('ps'));
 const reservasMias = () => S.reservas.filter(r => r.comercioId === 'c1' && r.dia === hoy());
@@ -136,9 +174,9 @@ function hoyPantalla() {
     tabs: tabs('b/hoy'), clase: 'con-tabs gris',
     html: `<header class="barra" style="background:var(--fondo-2);padding-left:18px;padding-right:14px;gap:12px">${logoLocal(miComercio(), 44, 13)}<div class="titulo" style="font-size:20px;font-weight:700;padding:0">${esc(miComercio().nombre.replace('Panadería ', ''))}<span class="mini" style="display:block;font-family:var(--ui);font-weight:550;letter-spacing:-.01em">Hoy${sucLocal() || ' · cierra ' + cierre()}</span></div>${demoPill()}</header>
     <div class="cuerpo">
-      ${min > 0 ? `<div class="card aviso fila entre">
-          <span class="col"><span class="fuerte">Publicá antes de las ${hhmm(limite())}</span><span class="chico">Cerrás a las ${cierre()}</span></span>
-          <span class="badge horno">${min >= 60 ? `Faltan ${Math.floor(min / 60)} h ${pad(min % 60)}` : `Faltan ${min} min`}</span></div>`
+      ${min > 0 ? `<div class="limite${min <= 30 ? ' urge' : ''}">
+          <span class="col"><span class="eti">Límite para publicar</span><b>${hhmm(limite())} h</b><span class="mini">Cerrás a las ${cierre()}</span></span>
+          <span class="limite-reloj"><b>${min >= 60 ? `${Math.floor(min / 60)}:${pad(min % 60)}` : min}</b><span>${min >= 60 ? 'horas' : 'minutos'}</span></span></div>`
         : `<div class="card plana fila">${icon('reloj', 22)}<span class="col"><span class="fuerte">Ya pasó el límite de hoy</span><span class="chico">Lo que sobre se puede publicar mañana. ${tienePlan('smart') ? 'La estación sigue registrando lo que se tira.' : ''}</span></span></div>`}
       <div class="card">
         <h2>¿Qué te sobró hoy?</h2>
@@ -146,16 +184,18 @@ function hoyPantalla() {
         <button class="btn bloque${min > 0 ? '' : ' off'}" data-go="b/camara">${icon('camara', 20)} Sacar foto</button>
       </div>
       ${tienePlan('smart') ? `<button class="card toque" data-go="b/estacion" style="text-align:left">
-        <div class="fila entre"><span class="fila" style="gap:8px">${icon('balanza', 22, 'verde')}<span class="fuerte">Estación de cocina</span></span><span class="badge">● Conectada</span></div>
-        <span class="chico">${ult ? `${hhmm(new Date(ult.t))} · ${dec(ult.kg)} kg de ${esc(ult.producto)} → ${ult.destino === 'basura' ? 'a la basura' : 'para vender'}` : 'Apoyá lo que sobra: la estación lo pesa, lo reconoce y lo publica.'}</span>
+        <div class="fila entre"><span class="fila" style="gap:8px">${icon('balanza', 22, 'verde')}<span class="fuerte">${EQUIPOS[equipoDelPlan()].nombre}</span></span><span class="badge">● Conectada</span></div>
+        <span class="chico">${ult ? `${hhmm(new Date(ult.t))} · ${dec(ult.kg)} kg de ${esc(ult.producto)} → ${ult.destino === 'basura' ? 'a la basura' : 'para vender'}` : (tienePlan('intelligence') ? 'Apoyá lo que sobra: la estación lo pesa, lo fotografía y lo publica.' : 'Apoyá lo que sobra: la balanza lo pesa y la app arma el pack.')}</span>
       </button>` : ''}
       ${sugN ? `<button class="card toque verde" data-tab="b/intel" style="text-align:left"><div class="fila entre"><span class="fila" style="gap:8px">${icon('chispa', 22)}<span class="fuerte">${sugN} sugerencias nuevas</span></span>${icon('adelante', 20)}</div><span class="chico">Intelligence encontró patrones en tu desperdicio.</span></button>` : ''}
-      <div class="stats">
-        <div class="stat"><span class="n" data-contar="${publicados}">${publicados}</span><span class="k">Publicados</span></div>
-        <div class="stat"><span class="n" data-contar="${vendidos}">${vendidos}</span><span class="k">Vendidos</span></div>
-        <div class="stat"><span class="n" data-contar="${porRetirar()}">${porRetirar()}</span><span class="k">A retirar</span></div>
+      <div class="resumen">
+        <div class="resumen-top"><span class="col"><span class="eti">Recuperado hoy</span><span class="mini">lo cobrado por packs</span></span><strong data-contar="${recuperado}" data-fmt="plata">${plata(recuperado)}</strong></div>
+        <div class="resumen-fila">
+          <div><b data-contar="${publicados}">${publicados}</b><span>Publicados</span></div>
+          <div><b data-contar="${vendidos}">${vendidos}</b><span>Vendidos</span></div>
+          <div><b data-contar="${porRetirar()}">${porRetirar()}</b><span>A retirar</span></div>
+        </div>
       </div>
-      <div class="card fila entre"><span class="col"><span class="chico">$ recuperados hoy</span><span class="mini">lo cobrado por packs</span></span><span class="kpi"><span class="n md verde" data-contar="${recuperado}" data-fmt="plata">${plata(recuperado)}</span></span></div>
       <div class="seccion"><h3>Tus packs de hoy</h3></div>
       ${activos.length ? `<div class="lista">${activos.map(p => `<button class="item" data-act="opciones-pack" data-id="${p.id}">
         <span class="ic-caja">${icon(p.origen === 'estacion' ? 'balanza' : 'camara', 20)}</span>
@@ -407,7 +447,7 @@ function estacion() {
   const b = enBalanza;
   return {
     clase: 'gris',
-    html: `${barra({ titulo: 'Estación', accion: '<span class="badge" style="margin-right:8px">● Conectada</span>' })}
+    html: `${barra({ titulo: EQUIPOS[equipoDelPlan()].nombre, accion: '<span class="badge" style="margin-right:8px">● Conectada</span>' })}
     <div class="cuerpo">
       <div class="card${b ? ' sel' : ''}" id="balanza">
         <span class="eti">En la balanza ahora</span>
@@ -419,7 +459,7 @@ function estacion() {
             <button class="btn sec" data-act="pesaje-basura" style="color:var(--horno);box-shadow:inset 0 0 0 1.5px var(--horno-100)">${icon('basura', 20)} A la basura</button>
           </div>
           ${!puede && !b.soloBasura ? '<span class="mini">Pasó el límite de publicación: hoy solo se registra.</span>' : ''}`
-        : `<div class="vacio" style="padding:16px 0 6px"><div class="circ">${icon('balanza', 30)}</div><p class="chico">Apoyá lo que sobró en la estación. La balanza lo pesa y la cámara lo reconoce.</p></div>
+        : `<div class="vacio" style="padding:16px 0 6px"><div class="circ">${icon('balanza', 30)}</div><p class="chico">${tienePlan('intelligence') ? 'Apoyá lo que sobró en la estación. La balanza lo pesa y la cámara lo reconoce.' : 'Apoyá lo que sobró en la balanza. El peso llega solo y la app reconoce qué es.'}</p></div>
           <button class="btn bloque sec" data-act="simular-pesaje">${icon('rayo', 20)} Simular un pesaje (demo)</button>`}
       </div>
       <div class="card fila entre">
@@ -432,7 +472,7 @@ function estacion() {
         <span class="col crece"><span class="fuerte trunc2">${esc(c.producto)}</span><span class="mini">${hhmm(new Date(c.t))} · ${dec(c.kg)} kg${c.motivo ? ' · ' + esc(c.motivo) : ''}</span></span>
         ${c.destino === 'basura' ? '<span class="badge horno">Basura</span>' : `<span class="badge">${c.packs || 0} pack${c.packs === 1 ? '' : 's'}</span>`}</div>`).join('')}</div>`
         : '<p class="chico">Todavía no se pesó nada hoy.</p>'}
-      ${nota('En la estación real estos dos botones están en la pantalla de la balanza: no hace falta tocar el celu.')}
+      ${nota('En el equipo real estos dos botones están en su propia pantalla: no hace falta tocar el celu.')}
     </div>`,
     montar: el => {
       if (!b || b.listo) { if (b) mostrarPesoFinal(el, b); return; }
@@ -641,11 +681,17 @@ function cuenta() {
         <div class="pila-s">${pl.incluye.map(x => `<span class="fila chico" style="gap:8px">${icon('check', 18, 'verde')}${esc(x)}</span>`).join('')}</div>
         <span class="mini">${esc(CONFIG.precios[S.plan].txt)} · ${esc(CONFIG.precios[S.plan].sub)} · precio de ejemplo</span>
       </div>
+      <div class="card equipos-card">
+        <div class="fila entre"><span class="col"><span class="eti">Equipos de cada plan</span><span class="fuerte">${EQUIPOS[equipoVisto()].nombre}</span></span><span class="plan-tag">Plan ${EQUIPOS[equipoVisto()].plan}</span></div>
+        ${visorHtml(equipoVisto(), true)}
+        ${selectorEquipo(equipoVisto())}
+        <button class="link" data-go="b/equipos" style="align-self:flex-start">Ver en detalle ${icon('adelante', 16)}</button>
+      </div>
       ${sig ? `<div class="card"><span class="fuerte">Pasá a ${PLANES[sig].nombre}</span><span class="chico">${esc(PLANES[sig].lema)}</span><button class="btn chico" data-act="ver-planes" style="align-self:flex-start">Ver qué incluye</button></div>` : ''}
       <div class="lista">
         <button class="item" data-act="ver-carta"><span class="ic-caja">${icon('etiqueta', 20)}</span><span class="col crece"><span class="fuerte">Tu carta</span><span class="mini">${S.carta.length} productos</span></span>${icon('adelante', 20, 'chev')}</button>
         <button class="item" data-go="b/local"><span class="ic-caja">${icon('local', 20)}</span><span class="col crece"><span class="fuerte">Datos del local</span><span class="mini">Cierre ${cierre()} · descuento ${Math.round(S.descuento * 100)}%</span></span>${icon('adelante', 20, 'chev')}</button>
-        ${tienePlan('smart') ? `<button class="item" data-go="b/estacion"><span class="ic-caja">${icon('balanza', 20)}</span><span class="col crece"><span class="fuerte">Estación</span><span class="mini">Conectada · calibrada hoy 08:10</span></span>${icon('adelante', 20, 'chev')}</button>` : ''}
+        ${tienePlan('smart') ? `<button class="item" data-go="b/estacion"><span class="ic-caja">${icon('balanza', 20)}</span><span class="col crece"><span class="fuerte">${EQUIPOS[equipoDelPlan()].nombre}</span><span class="mini">Conectada · calibrada hoy 08:10</span></span>${icon('adelante', 20, 'chev')}</button>` : ''}
         <button class="item" data-go="b/reporte"><span class="ic-caja">${icon('bajar', 20)}</span><span class="col crece"><span class="fuerte">Descargar reporte</span><span class="mini">Excel o PDF</span></span>${icon('adelante', 20, 'chev')}</button>
       </div>
       <span class="eti">Modo demo</span>
@@ -662,6 +708,7 @@ function cuenta() {
       </div>
       ${instalarUI(true)}
     </div>`,
+    montar: el => { montarVisor(el.querySelector('#visor3d'), equipoVisto()); },
   };
 }
 
@@ -753,7 +800,33 @@ async function descargar(b) {
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Equipos de cada plan, con visor 360°
+// ---------------------------------------------------------------------------
+function equipos() {
+  const mod = equipoVisto(), e = EQUIPOS[mod];
+  return {
+    clase: 'gris',
+    html: `${barra({ titulo: 'Equipos' })}
+    <div class="cuerpo">
+      ${visorHtml(mod)}
+      ${selectorEquipo(mod)}
+      <div class="col" style="gap:8px">
+        <div class="fila entre" style="align-items:flex-start"><h1 class="gran-titulo" style="font-size:26px">${e.nombre}</h1><span class="plan-tag" style="margin-top:6px;flex:none">Plan ${e.plan}</span></div>
+        <p class="chico" style="font-size:15px;line-height:1.45">${e.lema}</p>
+      </div>
+      <ul class="det-datos" style="background:var(--fondo)">
+        ${e.datos.map(([ic, t, s]) => `<li><span class="dd-ic">${icon(ic, 20)}</span><span class="col crece"><b>${t}</b><span>${s}</span></span></li>`).join('')}
+      </ul>
+      ${nota('Los modelos 3D son ilustrativos: muestran cómo es cada tipo de equipo, no un producto ya elegido.', 'info')}
+      <div class="card plana fila">${icon('camara', 22)}<span class="col"><span class="fuerte">El plan Básico no lleva equipo</span><span class="chico">Alcanza con el celular del local: sacás una foto y la app arma los packs.</span></span></div>
+    </div>`,
+    montar: el => { montarVisor(el.querySelector('#visor3d'), mod); },
+  };
+}
+
 export const pantallas = {
+  'b/equipos': equipos,
   'b/plan': altaPlan, 'b/carta': altaCarta, 'b/local': altaLocal, 'b/hoy': hoyPantalla,
   'b/camara': camara, 'b/analizando': analizando, 'b/duda': duda, 'b/revisar': revisar, 'b/publicado': publicado,
   'b/estacion': estacion, 'b/merma': merma, 'b/retiros': retiros, 'b/escanear': escanearPantalla,
@@ -883,6 +956,7 @@ export const acciones = {
   'ver-planes': () => hojaPlanes(),
   'elegir-plan-demo': () => hojaPlanes({ demo: true }),
   'plan-demo': ds => cambiarPlan(ds.v),
+  equipo: ds => { if (equipoSel === ds.v) return; equipoSel = ds.v; vibrar(8); nav.render(); },
   'ver-carta': () => {
     const h = abrirHoja(`<h2>Tu carta</h2><p class="chico">Tocá un producto para cambiar el precio.</p><div class="lista">${S.carta.map(p => `<button class="item" data-p="${p.id}"><span class="col crece"><span class="fuerte trunc2">${esc(p.nombre)}</span><span class="mini">${p.u === 'kg' ? 'por kg' : gramos(p.peso) + ' por unidad'}</span></span><span class="fuerte">${p.precio == null ? '—' : plata(p.precio)}</span></button>`).join('')}</div>`);
     h.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { cerrarHoja(true); editarPrecio(b.dataset.p); } });

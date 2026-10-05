@@ -3,7 +3,7 @@
    - Las calles del mapa que ya viste quedan guardadas (hasta 500 teselas).
    Al cambiar cualquier archivo, subí VERSION: invalida el cache viejo en los celus. */
 
-const VERSION = 'aprovecho-v3-3.1.0';
+const VERSION = 'aprovecho-v3-3.2.0';
 const TESELAS = 'aprovecho-v3-teselas';
 const FUENTES = 'aprovecho-v3-fuentes';
 
@@ -11,7 +11,7 @@ const LOCALES = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/nav.js', './js/util.js', './js/icons.js', './js/store.js', './js/data.js',
   './js/fotos.js', './js/intel.js', './js/ui.js', './js/mapa.js', './js/qr.js', './js/export.js',
-  './js/pwa.js', './js/cliente.js', './js/comercio.js', './js/intelui.js', './js/ilus.js',
+  './js/pwa.js', './js/cliente.js', './js/comercio.js', './js/intelui.js', './js/ilus.js', './js/visor3d.js',
   './img/aprovecho-isotipo.svg', './img/aprovecho-isotipo-blanco.svg', './img/aprovecho-logo.svg',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/favicon-32.png', './icons/favicon-64.png', './icons/favicon.svg',
@@ -22,6 +22,7 @@ const LIBRERIAS = [
   'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js',
   'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
+  'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js',   // visor 360° de los equipos
 ];
 
 self.addEventListener('install', e => {

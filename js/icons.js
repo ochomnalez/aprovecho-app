@@ -20,6 +20,7 @@ const P = {
   adelante: '<path d="m9 5 7 7-7 7"/>',
   abajo: '<path d="m6 9 6 6 6-6"/>',
   arriba: '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',
+  girar: '<path d="M20.5 9.5C19 7.4 15.8 6 12 6c-5 0-9 2.5-9 5.5S7 17 12 17"/><path d="m9.5 14 3 3-3 3"/><path d="M21 12.5c-.3 1.5-1.6 2.8-3.6 3.6"/>',
   mas: '<path d="M12 5v14M5 12h14"/>',
   menos: '<path d="M5 12h14"/>',
   filtros: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
